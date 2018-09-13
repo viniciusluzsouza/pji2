@@ -12,11 +12,13 @@ def verifica_mutex_movimento():
 	mutexMovimento.release()
 	return ret
 
+
 def seta_mutex_movimento(val):
 	global movimento
 	mutexMovimento.acquire()
 	movimento = val
 	mutexMovimento.release()
+
 
 class Cor(object):
 	# 0=unknown, 1=black, 2=blue, 3=green, 4=yellow, 5=red, 6=white, 7=brown
@@ -51,7 +53,6 @@ class Mover(Thread):
 	ESQUERDA = 4
 
 	def __init__(self, x, y):
-		self.status = 0
 		self.motor_direita = Motor(OUTPUT_C)
 		self.motor_esquerda = Motor(OUTPUT_B)
 		self.sensor_us = UltrasonicSensor()
@@ -106,12 +107,6 @@ class Mover(Thread):
 			if self._min_ref > read:
 				self._min_ref = read
 
-
-	def get_status(self):
-		"""Retorna o status do robo:
-			0 - parado
-			1 - andando """
-		return self.status
 
 	def _encontra_faixa(self, encontra_faixa_esquerda=False):
 		self.sensor_luminosidade.mode = 'COL-COLOR'
@@ -186,6 +181,7 @@ class Mover(Thread):
 
 		return (coord_x, coord_y)
 
+
 	def _finalizar_movimento(self):
 		global movimento
 		self.stop()
@@ -215,7 +211,7 @@ class Mover(Thread):
 					self._go_back()
 				elif not (self._coord_x == 6 and self._coord_y == 6): 
 					self._go_front()
-				faixa_esq = self._gira2(direcao)
+				faixa_esq = self._gira(direcao)
 				self._encontra_faixa(faixa_esq)
 				self._ultima_direcao = direcao
 			else:
@@ -227,7 +223,6 @@ class Mover(Thread):
 		self._pause = False
 		target = (self._min_ref + self._max_ref)/2
 		self._anda(50, target, float(0.65), 1, float(0.02), 1, self._min_ref, self._max_ref)
-		# self._anda_v1()
 		self._finalizar_movimento()
 		self._coord_x = calc_coord[0]
 		self._coord_y = calc_coord[1]
@@ -252,6 +247,7 @@ class Mover(Thread):
 				self.stop()
 				break;
 
+
 	def _go_back(self):
 		self.sensor_luminosidade.mode = 'COL-COLOR'
 		cor = self.sensor_luminosidade.value()
@@ -263,70 +259,9 @@ class Mover(Thread):
 				self.stop()
 				break;
 
-	def _gira(self, angulo):
+
+	def _gira(self, direcao):
 		"""Gira 90, -90, 180 ou 270 graus"""
-		# TO_TEST: giro com sensor em modo de cor
-		# self.sensor_luminosidade.mode = 'COL-COLOR'
-		self.sensor_luminosidade.mode = 'COL-REFLECT'
-		esquerda = False
-
-		if angulo == 90:
-			# gira pra direita
-			self.motor_esquerda.run_forever(speed_sp=100)
-
-		elif angulo == -90:
-			# gira pra esquerda
-			self.motor_direita.run_forever(speed_sp=100)
-			self.motor_esquerda.run_forever(speed_sp=-100)
-			esquerda = True
-
-		elif abs(angulo) == 180:
-			# gira 180
-			for i in range(0, 2):
-				self._gira(90)
-			return
-
-		elif angulo == -270:
-			# gira pra direita
-			self.motor_esquerda.run_forever(speed_sp=100)
-
-		elif angulo == 270:
-			# gira pra esquerda
-			self.motor_direita.run_forever(speed_sp=50)
-			self.motor_esquerda.run_forever(speed_sp=-150)
-			esquerda = True
-
-		sleep(0.2)
-		while True:
-			luminosidade = self.sensor_luminosidade.value()
-			# if luminosidade != Cor.PRETO:
-			# 	break
-
-			if luminosidade <= (self._min_ref+5):
-				if esquerda:
-					esquerda = False
-					sleep(0.5)
-					continue
-				sleep(0.4)
-				self.stop()
-				break;
-			# TO_TEST:
-
-		# while True:
-		# 	luminosidade = self.sensor_luminosidade.value()
-		# 	if luminosidade == Cor.PRETO:
-		# 		sleep(0.4)
-		# 		self.stop()
-		# 		break
-		
-		# self.sensor_luminosidade.mode = 'COL-COLOR'
-		# if self.sensor_luminosidade.value() == Cor.VERMELHO:
-
-
-	def _gira2(self, direcao):
-		"""Gira 90, -90, 180 ou 270 graus"""
-		# TO_TEST: giro com sensor em modo de cor
-		# self.sensor_luminosidade.mode = 'COL-COLOR'
 		self.sensor_luminosidade.mode = 'COL-REFLECT'
 		esquerda = False
 		encontra_faixa_esquerda = False
@@ -342,7 +277,7 @@ class Mover(Thread):
 				self.motor_esquerda.run_forever(speed_sp=-100)
 				encontra_faixa_esquerda  = True
 			elif self._ultima_direcao == Mover.TRAS:
-				self._gira2(Mover.ESQUERDA)
+				self._gira(Mover.ESQUERDA)
 				return False
 
 		elif direcao == Mover.DIREITA:
@@ -353,7 +288,7 @@ class Mover(Thread):
 				self.motor_esquerda.run_forever(speed_sp=-100)
 				encontra_faixa_esquerda = True
 			elif self._ultima_direcao == Mover.ESQUERDA:
-				self._gira2(Mover.FRENTE)
+				self._gira(Mover.FRENTE)
 				return False
 
 		elif direcao == Mover.ESQUERDA:
@@ -364,7 +299,7 @@ class Mover(Thread):
 			elif self._ultima_direcao == Mover.TRAS:
 				self.motor_esquerda.run_forever(speed_sp=100)
 			elif self._ultima_direcao == Mover.DIREITA:
-				self._gira2(Mover.TRAS)
+				self._gira(Mover.TRAS)
 				return False
 
 		elif direcao == Mover.TRAS:
@@ -375,7 +310,7 @@ class Mover(Thread):
 				self.motor_esquerda.run_forever(speed_sp=-100)
 				encontra_faixa_esquerda = True
 			elif self._ultima_direcao == Mover.FRENTE:
-				self._gira2(Mover.DIREITA)
+				self._gira(Mover.DIREITA)
 				return False
 
 		else:
@@ -419,6 +354,7 @@ class Mover(Thread):
 				power_left = - power
 		return (int(power_left), int(power_right))
 
+
 	def _anda(self, power, target, kp, kd, ki, direction, minRef, maxRef):
 		lastError = error = integral = 0
 		self.motor_esquerda.run_direct()
@@ -435,10 +371,10 @@ class Mover(Thread):
 					self.stop()
 					break
 
-			# if (self.sensor_us.value()/10) < 10:
-			# 	print("Obstaculo encontrado")
-			# 	self.stop(True)
-			# 	break
+			if (self.sensor_us.value()/10) < 10:
+				print("Obstaculo encontrado")
+				self.stop(True)
+				break
 
 			refRead = self.sensor_luminosidade.value()
 			error = target - (100 * ( refRead - minRef ) / ( maxRef - minRef ))
@@ -458,60 +394,6 @@ class Mover(Thread):
 				break;
 
 
-	def _anda_v1(self):
-		speed = 360/4
-		dt = 500
-		stop_action = "brake"
-
-		Kp = 1
-		Ki = 0
-		Kd = 0
-
-		integral = 0
-		previous_error = 0
-
-		target_value = self.sensor_luminosidade.value()
-
-		while True:
-			distance = self.sensor_us.value() / 10
-
-			error = target_value - self.sensor_luminosidade.value()
-			integral += (error * dt)
-			derivative = (error - previous_error) / dt
-
-			u = (Kp * error) + (Ki * integral) + (Kd * derivative)
-
-			if speed + abs(u) > 1000:
-				if u >= 0:
-					u = 1000 - speed
-				else:
-					u = speed - 1000
-
-			if u >= 0:
-				self.motor_esquerda.run_timed(time_sp=dt, speed_sp=speed + u, stop_action=stop_action)
-				self.motor_direita.run_timed(time_sp=dt, speed_sp=speed - u, stop_action=stop_action)
-				sleep(dt / 1000)
-			else:
-				self.motor_esquerda.run_timed(time_sp=dt, speed_sp=speed - u, stop_action=stop_action)
-				self.motor_direita.run_timed(time_sp=dt, speed_sp=speed + u, stop_action=stop_action)
-				sleep(dt / 1000)
-
-			previous_error = error
-			if error < -20:
-				break
-			# lum = self.sensor_luminosidade.value()
-			# print("target: %d, lum: %d" % (target_value, lum))
-			# if lum > (target_value + 10):
-			# 	break
-
-            # # Check if buttons pressed (for pause or stop)
-            # if not self.btn.down:  # Stop
-            #     print("Exit program... ")
-            #     self.shut_down = True
-            # elif not self.btn.left:  # Pause
-            #     print("[Pause]")
-            #     self.pause()
-
 	def run(self):
 		global movimento
 		while True:
@@ -526,45 +408,4 @@ class Mover(Thread):
 				break
 
 			sleep(1)
-
-
-if __name__ == "__main__":
-	mov = Mover(0, 0)
-	mov.start()
-
-	while True:
-		cmd = input("Digite o comando: ")
-		try:
-			if str(cmd).lower() == 'w':
-				if verifica_mutex_movimento() == 0:
-					seta_mutex_movimento(Mover.FRENTE)
-				else:
-					print("Robo em movimento. Aguarde ...")
-			elif str(cmd).lower() == 's':
-				if verifica_mutex_movimento() ==  0:
-					seta_mutex_movimento(Mover.TRAS)
-				else:
-					print("Robo em movimento. Aguarde ...")
-			elif str(cmd).lower() == 'd':
-				if verifica_mutex_movimento() ==  0:
-					seta_mutex_movimento(Mover.DIREITA)
-				else:
-					print("Robo em movimento. Aguarde ...")
-			elif str(cmd).lower() == 'a':
-				if verifica_mutex_movimento() ==  0:
-					seta_mutex_movimento(Mover.ESQUERDA)
-				else:
-					print("Robo em movimento. Aguarde ...")
-			elif str(cmd).lower() == 'b':
-				seta_mutex_movimento(Mover.PARADO)
-			elif str(cmd).lower() == 'q':
-				seta_mutex_movimento(Mover.EXIT)
-				break
-			else:
-				print("Comando nao identificado.")
-
-		except Exception as e:
-			raise Exception(str(e))
-
-
 
