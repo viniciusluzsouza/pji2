@@ -1,9 +1,12 @@
 from ev3dev.ev3 import *
 from time import time, sleep
 from threading import Thread, Lock
+from copy import deepcopy
 
 mutexMovimento = Lock()
 movimento = 0
+mutexHistorico = Lock()
+historico = []
 
 def verifica_mutex_movimento():
 	global movimento
@@ -18,6 +21,21 @@ def seta_mutex_movimento(val):
 	mutexMovimento.acquire()
 	movimento = val
 	mutexMovimento.release()
+
+
+def verifica_mutex_historico():
+	global historico
+	mutexHistorico.acquire()
+	ret = deepcopy(historico)
+	mutexHistorico.release()
+	return ret
+
+
+def append_mutex_historico(val):
+	global historico
+	mutexHistorico.acquire()
+	historico.append(deepcopy(val))
+	mutexHistorico.release()
 
 
 class Cor(object):
@@ -227,6 +245,10 @@ class Mover(Thread):
 		self._coord_x = calc_coord[0]
 		self._coord_y = calc_coord[1]
 
+		#Salvar os movimentos no historico
+		if direcao != Mover.PARADO and direcao != Mover.EXIT:
+			append_mutex_historico(direcao)
+
 
 	def stop(self, pause=False):
 		"""Para os dois motores"""
@@ -397,6 +419,7 @@ class Mover(Thread):
 	def run(self):
 		global movimento
 		while True:
+			print("Running mover.py")
 			mutexMovimento.acquire()
 			move = movimento
 			mutexMovimento.release()
