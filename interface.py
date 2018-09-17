@@ -1,7 +1,8 @@
 from manual import *
 from automatico import *
+from mover import *
 # from mover import Mover, mutexHistorico, historico, verifica_mutex_historico
-from mover_test import *
+# from mover_test import *
 
 
 class ModoDeJogo(object):
@@ -77,7 +78,7 @@ class InterfaceSR(object):
 
 if __name__ == "__main__":
 	coord_ini = (0, 0)
-	modo_jogo = ModoDeJogo.MANUAL
+	modo_jogo = ModoDeJogo.AUTOMATICO
 	cacas = [(2,4), (5,5), (1,1)]
 	interface = InterfaceSR()
 	interface.novo_jogo(modo=modo_jogo, coord_inicial=coord_ini, cacas=cacas)

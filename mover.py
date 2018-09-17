@@ -419,7 +419,6 @@ class Mover(Thread):
 	def run(self):
 		global movimento
 		while True:
-			print("Running mover.py")
 			mutexMovimento.acquire()
 			move = movimento
 			mutexMovimento.release()
