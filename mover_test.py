@@ -1,40 +1,7 @@
 from time import time, sleep
 from threading import Thread, Lock
 from copy import deepcopy
-
-mutexMovimento = Lock()
-movimento = 0
-mutexHistorico = Lock()
-historico = []
-
-def verifica_mutex_movimento():
-	global movimento
-	mutexMovimento.acquire()
-	ret = deepcopy(movimento)
-	mutexMovimento.release()
-	return ret
-
-
-def seta_mutex_movimento(val):
-	global movimento
-	mutexMovimento.acquire()
-	movimento = deepcopy(val)
-	mutexMovimento.release()
-
-def verifica_mutex_historico():
-	global historico
-	mutexHistorico.acquire()
-	ret = deepcopy(historico)
-	mutexHistorico.release()
-	return ret
-
-
-def append_mutex_historico(val):
-	global historico
-	mutexHistorico.acquire()
-	historico.append(deepcopy(val))
-	mutexHistorico.release()
-
+from shared import *
 
 class Cor(object):
 	# 0=unknown, 1=black, 2=blue, 3=green, 4=yellow, 5=red, 6=white, 7=brown
@@ -114,11 +81,11 @@ class Mover(Thread):
 
 
 	def _finalizar_movimento(self):
-		global movimento
-		mutexMovimento.acquire()
-		if movimento != Mover.EXIT:
-			movimento = Mover.PARADO
-		mutexMovimento.release()
+		global shared_obj
+		shared_obj.acquire(SharedObj.MoverMovimento)
+		if shared_obj.get_directly(SharedObj.MoverMovimento) != Mover.EXIT:
+			shared_obj.set_directly(SharedObj.MoverMovimento, Mover.PARADO)
+		shared_obj.release(SharedObj.MoverMovimento)
 
 
 	def move(self, direcao, coord_atual=None):
@@ -140,23 +107,15 @@ class Mover(Thread):
 		self._finalizar_movimento()
 
 		#Salvar os movimentos no historico
+		global shared_obj
 		if direcao != Mover.PARADO and direcao != Mover.EXIT:
-			append_mutex_historico(direcao)
-
-	def _verifica_mutex(self):
-		global movimento
-		mutexMovimento.acquire()
-		ret = movimento
-		mutexMovimento.release()
-		return ret
+			shared_obj.append_list(SharedObj.MoverHistorico, direcao)
 
 
 	def run(self):
-		global movimento
+		global shared_obj
 		while True:
-			mutexMovimento.acquire()
-			move = movimento
-			mutexMovimento.release()
+			move = shared_obj.get(SharedObj.MoverMovimento)
 
 			if move != Mover.PARADO:
 				self.move(move)
@@ -164,5 +123,5 @@ class Mover(Thread):
 			if move == Mover.EXIT:
 				break
 
-			sleep(1)
+			sleep(0.1)
 

@@ -1,83 +1,17 @@
-# from mover_test import *
-from mover import *
+from mover_test import *
+# from mover import *
 from interface import *
 from threading import Thread, Lock
+from shared import *
 from time import sleep
 from copy import deepcopy
-
-mutexValidarCaca = Lock()
-cacaAValidar = 0
-
-mutexPosicaoAutonomo = Lock()
-posicaoAutonomo = (0, 0)
-
-mutexFimJogo = Lock()
-mutexCacasAtualizadas = Lock()
-fimDoJogo = 0
-cacasAtualizadas = []
-
-def verifica_mutex_fim_jogo():
-	global fimDoJogo
-	mutexFimJogo.acquire()
-	ret = fimDoJogo
-	mutexFimJogo.release()
-	return ret
-
-def seta_mutex_fim_jogo(val):
-	global fimDoJogo
-	mutexFimJogo.acquire()
-	fimDoJogo = deepcopy(val)
-	mutexFimJogo.release()
-
-def verifica_mutex_cacas_atualizadas():
-	global cacasAtualizadas
-	mutexCacasAtualizadas.acquire()
-	ret = deepcopy(cacasAtualizadas)
-	mutexCacasAtualizadas.release()
-	return ret
-
-
-def seta_mutex_cacas_atualizadas(cacas):
-	global cacasAtualizadas
-	mutexCacasAtualizadas.acquire()
-	cacasAtualizadas = deepcopy(cacas)
-	mutexCacasAtualizadas.release()
-
-def verifica_mutex_caca_a_validar():
-	global cacaAValidar
-	mutexValidarCaca.acquire()
-	ret = deepcopy(cacaAValidar)
-	mutexValidarCaca.release()
-	return ret
-
-
-def seta_mutex_caca_a_validar(val):
-	global cacaAValidar
-	mutexValidarCaca.acquire()
-	cacaAValidar = deepcopy(val)
-	mutexValidarCaca.release()
-
-
-def verifica_mutex_posicao_autonomo():
-	global posicaoAutonomo
-	mutexPosicaoAutonomo.acquire()
-	ret = deepcopy(posicaoAutonomo)
-	mutexPosicaoAutonomo.release()
-	return ret
-
-
-def seta_mutex_posicao_autonomo(pos):
-	global posicaoAutonomo
-	mutexPosicaoAutonomo.acquire()
-	posicaoAutonomo = deepcopy(pos)
-	mutexPosicaoAutonomo.release()
 
 
 class Automatico(Thread):
 	"""Busca cacas de maneira autonoma"""
 	def __init__(self, coord, cacas):
-		global posicaoAutonomo
-		posicaoAutonomo = deepcopy(coord)
+		global shared_obj
+		shared_obj.set(SharedObj.AutomaticoPosicao, coord)
 		self.posicao_inicial = coord
 		self.cacas = cacas
 		self.cacas_ordenadas = cacas
@@ -89,7 +23,7 @@ class Automatico(Thread):
 
 		self.movedor = Mover(self._x, self._y)
 		self.movedor.start()
-		seta_mutex_cacas_atualizadas(cacas)
+		shared_obj.set(SharedObj.InterfaceCacasAtualizadas, cacas)
 
 		super(Automatico, self).__init__()
 
@@ -171,14 +105,15 @@ class Automatico(Thread):
 
 
 	def _valida_caca(self, posicao):
-		seta_mutex_caca_a_validar(1)
+		global shared_obj
+		shared_obj.set(SharedObj.AutomaticoValidarCaca, 1)
 		ret = True
 		while True:
-			if verifica_mutex_caca_a_validar():
+			if shared_obj.get(SharedObj.AutomaticoValidarCaca):
 				sleep(1)
 				continue
 
-			posicao_validada = verifica_mutex_posicao_autonomo()
+			posicao_validada = shared_obj.get(SharedObj.AutomaticoPosicao)
 			if posicao_validada != posicao:
 				# Caca invalidada!! Ajusta posicao!!
 				ret = False
@@ -200,16 +135,19 @@ class Automatico(Thread):
 
 
 	def atualiza_cacas(self):
-		self.cacas_ordenadas = verifica_mutex_cacas_atualizadas()
+		global shared_obj
+		self.cacas_ordenadas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
 		self._ordena_cacas()
 
 
 	def _finaliza_tudo(self):
-		seta_mutex_movimento(Mover.EXIT)
-		seta_mutex_fim_jogo(1)
+		global shared_obj
+		shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
+		shared_obj.set(SharedObj.InterfaceFimJogo, 1)
 
 
 	def _go(self):
+		global shared_obj
 		if not len(self.cacas_ordenadas):
 			print("CACAS VAZIAS")
 			self._finaliza_tudo()
@@ -222,10 +160,10 @@ class Automatico(Thread):
 		while len(direcoes):
 			direcao = direcoes.pop(0)
 			self.informa_movimento(direcao)
-			if verifica_mutex_movimento() == Mover.PARADO:
-				seta_mutex_movimento(direcao)
+			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
+				shared_obj.set(SharedObj.MoverMovimento, direcao)
 
-			while verifica_mutex_movimento() != Mover.PARADO:
+			while shared_obj.get(SharedObj.MoverMovimento) != Mover.PARADO:
 				sleep(1)
 
 			self.historico_mov.append(direcao)
@@ -234,17 +172,18 @@ class Automatico(Thread):
 
 
 	def run(self):
+		global shared_obj
 		# Primeira vez só ordena as cacas e sai cavando
 		self._ordena_cacas()
 		while True:
 			posicao = self._go()
-			seta_mutex_posicao_autonomo(posicao)
+			shared_obj.set(SharedObj.AutomaticoPosicao, posicao)
 			validacao = self._valida_caca(posicao)
 			if validacao:
 				print("\nCACA VALIDADA!!\n")
 				
 
-			if verifica_mutex_fim_jogo() or not len(self.cacas_ordenadas):
+			if shared_obj.get(SharedObj.InterfaceFimJogo) or not len(self.cacas_ordenadas):
 				# FIM DO JOGO
 				break
 

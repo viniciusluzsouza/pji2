@@ -1,25 +1,9 @@
-# from mover_test import *
-from mover import *
+from mover_test import *
+# from mover import *
 from interface import *
 from threading import Thread, Lock
 from time import sleep
-
-mutexManual = Lock()
-direcaoManual = 0
-
-def verifica_mutex_manual():
-	global direcaoManual
-	mutexManual.acquire()
-	ret = deepcopy(direcaoManual)
-	mutexManual.release()
-	return ret
-
-
-def seta_mutex_manual(val):
-	global direcaoManual
-	mutexManual.acquire()
-	direcaoManual = deepcopy(val)
-	mutexManual.release()
+from shared import *
 
 
 class Manual(Thread):
@@ -37,36 +21,38 @@ class Manual(Thread):
 
 
 	def move(self, direcao):
-		seta_mutex_movimento(direcao)
+		global shared_obj
+		shared_obj.set(SharedObj.ManualMovimento, direcao)
 		while True:
 			# Mutex manual vem da interface
-			mut_manual = verifica_mutex_manual()
+			mut_manual = shared_obj.get(SharedObj.ManualMovimento)
 			if mut_manual == Mover.PARADO:
-				seta_mutex_movimento(Mover.PARADO)
+				shared_obj.set(SharedObj.MoverMovimento, Mover.PARADO)
 
 			if mut_manual == Mover.EXIT:
-				seta_mutex_movimento(Mover.EXIT)
+				shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 
 			# Mutex movimento é do mover (aguarda finalizar o movimento)
-			if verifica_mutex_movimento() == Mover.PARADO:
+			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
 				break
 
-			sleep(1)
+			sleep(0.1)
 
-		if verifica_mutex_manual() != Mover.EXIT:
-			seta_mutex_manual(Mover.PARADO)
+		if shared_obj.get(SharedObj.ManualMovimento) != Mover.EXIT:
+			shared_obj.set(SharedObj.ManualMovimento, Mover.PARADO)
 
 
 	def run(self):
+		global shared_obj
 		while True:
-			mov = verifica_mutex_manual()
+			mov = shared_obj.get(SharedObj.ManualMovimento)
 			if mov != Mover.PARADO:
 				if mov == Mover.EXIT:
-					seta_mutex_movimento(Mover.EXIT)
+					shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 					break
 
 				self.move(mov)
 
-			sleep(1)
+			sleep(0.1)
 
 
