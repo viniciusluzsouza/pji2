@@ -104,6 +104,26 @@ class Automatico(Thread):
 		return direcoes
 
 
+	def _verifica_pausa(self):
+		global shared_obj
+		if shared_obj.get(SharedObj.InterfacePauseContinua):
+			# Pausa setada, paramos e aguardamos algum evento ...
+			shared_obj.set(SharedObj.MoverMovimento, Mover.PAUSA)
+			
+			while True:
+				sleep(0.5)
+				# Aguardamos duas coisas: continue ou fim do jogo
+				if not shared_obj.get(SharedObj.InterfacePauseContinua):
+					# Fim da pausa
+					shared_obj.set(SharedObj.MoverMovimento, Mover.CONTINUA)
+					return Mover.CONTINUA
+
+				if shared_obj.get(SharedObj.InterfaceFimJogo):
+					# Fim do jogo
+					shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
+					return Mover.EXIT
+
+
 	def _valida_caca(self, posicao):
 		global shared_obj
 		shared_obj.set(SharedObj.AutomaticoValidarCaca, 1)
@@ -158,6 +178,9 @@ class Automatico(Thread):
 		direcoes = self._calcula_direcoes(caca)
 		print("DIRECOES : %s" % str(direcoes))
 		while len(direcoes):
+			print("Verifica pausa GO")
+			if self._verifica_pausa() == Mover.EXIT:
+				return
 			direcao = direcoes.pop(0)
 			self.informa_movimento(direcao)
 			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
@@ -176,14 +199,21 @@ class Automatico(Thread):
 		# Primeira vez só ordena as cacas e sai cavando
 		self._ordena_cacas()
 		while True:
+			print("Verifica pausa RUN")
+			if self._verifica_pausa() == Mover.EXIT:
+				break
+
 			posicao = self._go()
+			if shared_obj.get(SharedObj.InterfaceFimJogo):
+				break
+
 			shared_obj.set(SharedObj.AutomaticoPosicao, posicao)
 			validacao = self._valida_caca(posicao)
 			if validacao:
 				print("\nCACA VALIDADA!!\n")
 				
 
-			if shared_obj.get(SharedObj.InterfaceFimJogo) or not len(self.cacas_ordenadas):
+			if not len(self.cacas_ordenadas):
 				# FIM DO JOGO
 				break
 

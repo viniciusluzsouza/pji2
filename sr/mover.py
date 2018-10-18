@@ -2,40 +2,7 @@ from ev3dev.ev3 import *
 from time import time, sleep
 from threading import Thread, Lock
 from copy import deepcopy
-
-mutexMovimento = Lock()
-movimento = 0
-mutexHistorico = Lock()
-historico = []
-
-def verifica_mutex_movimento():
-	global movimento
-	mutexMovimento.acquire()
-	ret = movimento
-	mutexMovimento.release()
-	return ret
-
-
-def seta_mutex_movimento(val):
-	global movimento
-	mutexMovimento.acquire()
-	movimento = val
-	mutexMovimento.release()
-
-
-def verifica_mutex_historico():
-	global historico
-	mutexHistorico.acquire()
-	ret = deepcopy(historico)
-	mutexHistorico.release()
-	return ret
-
-
-def append_mutex_historico(val):
-	global historico
-	mutexHistorico.acquire()
-	historico.append(deepcopy(val))
-	mutexHistorico.release()
+from shared import *
 
 
 class Cor(object):
@@ -70,6 +37,9 @@ class Mover(Thread):
 	TRAS = 3
 	ESQUERDA = 4
 
+	PAUSA = 10
+	CONTINUA = 11
+
 	def __init__(self, x, y):
 		self.motor_direita = Motor(OUTPUT_C)
 		self.motor_esquerda = Motor(OUTPUT_B)
@@ -85,7 +55,6 @@ class Mover(Thread):
 		self._ultima_direcao = Mover.FRENTE
 		self._min_ref = 5
 		self._max_ref = 80
-		self._pause = False
 		self._coord_ini = (x, y)
 		self._coord_x = x
 		self._coord_y = y
@@ -200,13 +169,34 @@ class Mover(Thread):
 		return (coord_x, coord_y)
 
 
+	def _verifica_pausa(self):
+		global shared_obj
+		if shared_obj.get(SharedObj.MoverMovimento) == Mover.PAUSA:
+			print("EM PAUSA !! Aguardando algo ...")
+			self.stop()
+			shared_obj.append_list(SharedObj.MoverHistorico, Mover.PAUSA)
+			# self.stop()
+			while True:
+				sleep(0.5)
+
+				if shared_obj.get(SharedObj.MoverMovimento) == Mover.CONTINUA \
+				or shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
+					shared_obj.append_list(SharedObj.MoverHistorico, Mover.CONTINUA)
+					break
+
+				if shared_obj.get(SharedObj.MoverMovimento) == Mover.EXIT:
+					return Mover.EXIT
+
+		return Mover.CONTINUA
+
+
 	def _finalizar_movimento(self):
-		global movimento
+		global shared_obj
 		self.stop()
-		mutexMovimento.acquire()
-		if movimento != Mover.EXIT:
-			movimento = Mover.PARADO
-		mutexMovimento.release()
+		shared_obj.acquire(SharedObj.MoverMovimento)
+		if shared_obj.get_directly(SharedObj.MoverMovimento) != Mover.EXIT:
+			shared_obj.set_directly(SharedObj.MoverMovimento, Mover.PARADO)
+		shared_obj.release(SharedObj.MoverMovimento)
 
 
 	def move(self, direcao, coord_atual=None):
@@ -217,28 +207,29 @@ class Mover(Thread):
 			self.stop()
 			return
 
+		if self._verifica_pausa() == Mover.EXIT:
+			return
+
 		calc_coord = self._calc_next_coord(direcao, coord_atual)
 		self._next_coord = calc_coord
 
-		if not self._pause:
-			if direcao != self._ultima_direcao:
-				if (direcao == Mover.FRENTE and self._ultima_direcao == Mover.TRAS) or \
-					(direcao == Mover.TRAS and self._ultima_direcao == Mover.FRENTE) or \
-					(direcao == Mover.DIREITA and self._ultima_direcao == Mover.ESQUERDA) or \
-					(direcao == Mover.ESQUERDA and self._ultima_direcao == Mover.DIREITA):
-					self._go_back()
-				elif not (self._coord_x == 6 and self._coord_y == 6): 
-					self._go_front()
-				faixa_esq = self._gira(direcao)
-				self._encontra_faixa(faixa_esq)
-				self._ultima_direcao = direcao
-			else:
+		if direcao != self._ultima_direcao:
+			if (direcao == Mover.FRENTE and self._ultima_direcao == Mover.TRAS) or \
+				(direcao == Mover.TRAS and self._ultima_direcao == Mover.FRENTE) or \
+				(direcao == Mover.DIREITA and self._ultima_direcao == Mover.ESQUERDA) or \
+				(direcao == Mover.ESQUERDA and self._ultima_direcao == Mover.DIREITA):
+				self._go_back()
+			elif not (self._coord_x == 6 and self._coord_y == 6): 
 				self._go_front()
-				self._encontra_faixa()
+			faixa_esq = self._gira(direcao)
+			self._encontra_faixa(faixa_esq)
+			self._ultima_direcao = direcao
+		else:
+			self._go_front()
+			self._encontra_faixa()
 
 		# self.calibra_andando()
 		# power, target, kp, kd, ki, direction, minref, maxref
-		self._pause = False
 		target = (self._min_ref + self._max_ref)/2
 		self._anda(50, target, float(0.65), 1, float(0.02), 1, self._min_ref, self._max_ref)
 		self._finalizar_movimento()
@@ -246,16 +237,15 @@ class Mover(Thread):
 		self._coord_y = calc_coord[1]
 
 		#Salvar os movimentos no historico
+		global shared_obj
 		if direcao != Mover.PARADO and direcao != Mover.EXIT:
-			append_mutex_historico(direcao)
+			shared_obj.append_list(SharedObj.MoverHistorico, direcao)
 
 
-	def stop(self, pause=False):
+	def stop(self):
 		"""Para os dois motores"""
 		self.motor_esquerda.stop(stop_action='brake')
 		self.motor_direita.stop(stop_action='brake')
-		if pause:
-			self._pause = True
 
 
 	def _go_front(self):
@@ -355,14 +345,6 @@ class Mover(Thread):
 		return encontra_faixa_esquerda
 
 
-	def _verifica_mutex(self):
-		global movimento
-		mutexMovimento.acquire()
-		ret = movimento
-		mutexMovimento.release()
-		return ret
-
-
 	def _steering(self, course, power):
 		power_left = power_right = power
 		s = (50 - abs(float(course))) / 50
@@ -378,13 +360,20 @@ class Mover(Thread):
 
 
 	def _anda(self, power, target, kp, kd, ki, direction, minRef, maxRef):
+		global shared_obj
 		lastError = error = integral = 0
 		self.motor_esquerda.run_direct()
 		self.motor_direita.run_direct()
 		while True:
-			mutex_val = self._verifica_mutex()
-			if mutex_val == Mover.PARADO or mutex_val == Mover.EXIT:
-				self.stop(True)
+			if self._verifica_pausa() == Mover.EXIT:
+				return
+			else:
+				self.motor_esquerda.run_direct()
+				self.motor_direita.run_direct()
+
+			mov = shared_obj.get(SharedObj.MoverMovimento)
+			if mov == Mover.PARADO or mov == Mover.EXIT:
+				self.stop()
 				break
 
 			self.sensor_luminosidade.mode='COL-REFLECT'
@@ -395,7 +384,7 @@ class Mover(Thread):
 
 			if (self.sensor_us.value()/10) < 10:
 				print("Obstaculo encontrado")
-				self.stop(True)
+				self.stop()
 				break
 
 			refRead = self.sensor_luminosidade.value()
@@ -417,17 +406,17 @@ class Mover(Thread):
 
 
 	def run(self):
-		global movimento
+		global shared_obj
 		while True:
-			mutexMovimento.acquire()
-			move = movimento
-			mutexMovimento.release()
+			if self._verifica_pausa() == Mover.EXIT:
+				break
 
+			move = shared_obj.get(SharedObj.MoverMovimento)
 			if move != Mover.PARADO:
-				self.move(move)
+					self.move(move)
 
 			if move == Mover.EXIT:
 				break
 
-			sleep(1)
+			sleep(0.1)
 

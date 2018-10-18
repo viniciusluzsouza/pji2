@@ -35,12 +35,14 @@ class Mover(Thread):
 	TRAS = 3
 	ESQUERDA = 4
 
+	PAUSA = 10
+	CONTINUA = 11
+
 	def __init__(self, x, y):
 		# Atributos ocultos
 		self._ultima_direcao = Mover.FRENTE
 		self._min_ref = 5
 		self._max_ref = 80
-		self._pause = False
 		self._coord_ini = (x, y)
 		self._coord_x = x
 		self._coord_y = y
@@ -80,6 +82,26 @@ class Mover(Thread):
 		return (coord_x, coord_y)
 
 
+	def _verifica_pausa(self):
+		global shared_obj
+		if shared_obj.get(SharedObj.MoverMovimento) == Mover.PAUSA:
+			print("EM PAUSA !! Aguardando algo ...")
+			shared_obj.append_list(SharedObj.MoverHistorico, Mover.PAUSA)
+			# self.stop()
+			while True:
+				sleep(0.5)
+
+				if shared_obj.get(SharedObj.MoverMovimento) == Mover.CONTINUA \
+				or shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
+					shared_obj.append_list(SharedObj.MoverHistorico, Mover.CONTINUA)
+					break
+
+				if shared_obj.get(SharedObj.MoverMovimento) == Mover.EXIT:
+					return Mover.EXIT
+
+		return Mover.CONTINUA
+
+
 	def _finalizar_movimento(self):
 		global shared_obj
 		shared_obj.acquire(SharedObj.MoverMovimento)
@@ -95,9 +117,16 @@ class Mover(Thread):
 		if direcao == Mover.PARADO or direcao == Mover.EXIT:
 			return
 
+		if self._verifica_pausa() == Mover.EXIT:
+			return
+
 		calc_coord = self._calc_next_coord(direcao, coord_atual)
 		self._next_coord = calc_coord
 		print("\nindo para: %s" % str(calc_coord))
+
+		sleep(2)
+		if self._verifica_pausa() == Mover.EXIT:
+			return
 
 		sleep(2)
 		print("moved!")
@@ -115,8 +144,10 @@ class Mover(Thread):
 	def run(self):
 		global shared_obj
 		while True:
-			move = shared_obj.get(SharedObj.MoverMovimento)
+			if self._verifica_pausa() == Mover.EXIT:
+				break
 
+			move = shared_obj.get(SharedObj.MoverMovimento)
 			if move != Mover.PARADO:
 				self.move(move)
 

@@ -1,9 +1,9 @@
 from manual import *
 from automatico import *
 # from mover import *
-# from mover import Mover, mutexHistorico, historico, verifica_mutex_historico
 from mover_test import *
 from shared import *
+import sys, select
 
 
 class ModoDeJogo(object):
@@ -44,7 +44,9 @@ class InterfaceSR(object):
 		if self.modo == ModoDeJogo.AUTOMATICO:
 			shared_obj.set(SharedObj.InterfaceFimJogo, 1)
 		else:
+			shared_obj.set(SharedObj.InterfaceFimJogo, 1)
 			shared_obj.set(SharedObj.ManualMovimento, Mover.EXIT)
+			shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 
 
 	def novo_jogo(self, modo, coord_inicial, cacas=None):
@@ -82,10 +84,30 @@ class InterfaceSR(object):
 		global shared_obj
 		return shared_obj.get(SharedObj.MoverHistorico)
 
+	def pause(self):
+		global shared_obj
+		print("setando pausa")
+		shared_obj.set(SharedObj.InterfacePauseContinua, 1)
+
+	def continua(self):
+		global shared_obj
+
+		# Se mandar continuar, sem estar em pausa, nao faz nada
+		if not shared_obj.get(SharedObj.InterfacePauseContinua):
+			return
+
+		print("continuando")
+		shared_obj.set(SharedObj.InterfacePauseContinua, 0)
+
+	def stop(self):
+		self.pause()
+		self.fim_jogo()
+
+
 if __name__ == "__main__":
 	global shared_obj
 	coord_ini = (0, 0)
-	modo_jogo = ModoDeJogo.MANUAL
+	modo_jogo = ModoDeJogo.AUTOMATICO
 	cacas = [(2,4), (5,5), (1,1)]
 	interface = InterfaceSR()
 	interface.novo_jogo(modo=modo_jogo, coord_inicial=coord_ini, cacas=cacas)
@@ -119,7 +141,11 @@ if __name__ == "__main__":
 					else:
 						print("Robo em movimento. Aguarde ...")
 				elif str(cmd).lower() == 'b':
-					interface.fim_jogo()
+					interface.pause()
+				elif str(cmd).lower() == 'c':
+					interface.continua()
+				elif str(cmd).lower() == 'p':
+					interface.stop()
 					break
 				elif str(cmd).lower() == 'q':
 					interface.fim_jogo()
@@ -133,9 +159,32 @@ if __name__ == "__main__":
 
 	else:
 		print("AUTONOMO MODE ON!!")
+
 		while True:
 			if shared_obj.get(SharedObj.InterfaceFimJogo):
 				break
+
+
+			user_cmd, o, e = select.select([sys.stdin], [], [], 2)
+
+			if user_cmd:
+				user_cmd = sys.stdin.readline().strip()
+				print("entry %s" % str(user_cmd))
+				if user_cmd.lower() == 'b':
+					print("pausa !!!!!")
+					interface.pause()
+				elif user_cmd.lower() == 'c':
+					interface.continua()
+				elif user_cmd.lower() == 'q':
+					interface.fim_jogo()
+					break
+				elif user_cmd.lower() == 'p':
+					interface.stop()
+					break
+				elif user_cmd.lower() in ('w', 's', 'd', 'e'):
+					print("Modo de jogo automatico!!")
+				else:
+					print("Comando desconhecido")
 
 			caca_a_validar = shared_obj.get(SharedObj.AutomaticoValidarCaca)
 			if caca_a_validar:
