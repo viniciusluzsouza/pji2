@@ -4,6 +4,7 @@ from interface import *
 from threading import Thread, Lock
 from time import sleep
 from shared import *
+from mensagens_robo import *
 
 
 class Manual(Thread):
@@ -43,7 +44,21 @@ class Manual(Thread):
 			return shared_obj.get(SharedObj.ManualMovimento)
 
 
+	def _avisa_movimento(self, direcao):
+		global shared_obj
+		msg = {'cmd': MsgSRtoSS.MovendoPara, 'direcao': direcao}
+		shared_obj.acquire(SharedObj.TransmitirLock)
+		shared_obj.set_directly(SharedObj.TransmitirMsg, msg)
+		shared_obj.set_event(SharedObj.TransmitirMsg)
+
+		shared_obj.wait_event(SharedObj.TransmitirResp)
+		resp = shared_obj.get_directly(SharedObj.TransmitirResp)	# TODO: Tratar resposta
+		shared_obj.clear_event(SharedObj.TransmitirResp)
+		shared_obj.release(SharedObj.TransmitirLock)
+
 	def move(self, direcao):
+		# self._avisa_movimento()
+
 		global shared_obj
 		shared_obj.set(SharedObj.ManualMovimento, direcao)
 		while True:

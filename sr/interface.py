@@ -3,7 +3,8 @@ from automatico import *
 # from mover import *
 from mover_test import *
 from shared import *
-import sys, select
+from receptor import Receptor
+from transmissor import Transmissor
 
 
 class ModoDeJogo(object):
@@ -20,6 +21,8 @@ class InterfaceSR(object):
 		self.cacas = None
 		self.cacador = None
 
+		self.receptor = Receptor(50012, self)
+		self.receptor.run()
 		#self.identidade = self._get_mac()
 
 
@@ -32,7 +35,7 @@ class InterfaceSR(object):
 
 
 	def get_identidade(self):
-		return self.identidade
+		return "RG"
 
 
 	def get_cor(self):
@@ -105,111 +108,9 @@ class InterfaceSR(object):
 
 
 if __name__ == "__main__":
-	global shared_obj
-	coord_ini = (0, 0)
-	modo_jogo = ModoDeJogo.AUTOMATICO
-	cacas = [(2,4), (5,5), (1,1)]
 	interface = InterfaceSR()
-	interface.novo_jogo(modo=modo_jogo, coord_inicial=coord_ini, cacas=cacas)
-
-	if modo_jogo == ModoDeJogo.MANUAL:
-		while True:
-			cmd = input("Digite o comando: ")
-			try:
-				if str(cmd).lower() == 'w':
-					interface.mover_manual(Mover.FRENTE)
-					if shared_obj.get(SharedObj.MoverMovimento) == 0:
-						shared_obj.set(SharedObj.MoverMovimento, Mover.FRENTE)
-					else:
-						print("Robo em movimento. Aguarde ...")
-				elif str(cmd).lower() == 's':
-					interface.mover_manual(Mover.TRAS)
-					if shared_obj.get(SharedObj.MoverMovimento) ==  0:
-						shared_obj.set(SharedObj.MoverMovimento, Mover.TRAS)
-					else:
-						print("Robo em movimento. Aguarde ...")
-				elif str(cmd).lower() == 'd':
-					interface.mover_manual(Mover.DIREITA)
-					if shared_obj.get(SharedObj.MoverMovimento) ==  0:
-						shared_obj.set(SharedObj.MoverMovimento, Mover.DIREITA)
-					else:
-						print("Robo em movimento. Aguarde ...")
-				elif str(cmd).lower() == 'a':
-					interface.mover_manual(Mover.ESQUERDA)
-					if shared_obj.get(SharedObj.MoverMovimento) ==  0:
-						shared_obj.set(SharedObj.MoverMovimento, Mover.ESQUERDA)
-					else:
-						print("Robo em movimento. Aguarde ...")
-				elif str(cmd).lower() == 'b':
-					interface.pause()
-				elif str(cmd).lower() == 'c':
-					interface.continua()
-				elif str(cmd).lower() == 'p':
-					interface.stop()
-					break
-				elif str(cmd).lower() == 'q':
-					interface.fim_jogo()
-					break
-				else:
-					print("Comando nao identificado.")
-
-			except Exception as e:
-				raise Exception('ERRO: %s' % str(e))
-				raise Exception(str(e))
-
-	else:
-		print("AUTONOMO MODE ON!!")
-
-		while True:
-			if shared_obj.get(SharedObj.InterfaceFimJogo):
-				break
-
-
-			user_cmd, o, e = select.select([sys.stdin], [], [], 2)
-
-			if user_cmd:
-				user_cmd = sys.stdin.readline().strip()
-				print("entry %s" % str(user_cmd))
-				if user_cmd.lower() == 'b':
-					print("pausa !!!!!")
-					interface.pause()
-				elif user_cmd.lower() == 'c':
-					interface.continua()
-				elif user_cmd.lower() == 'q':
-					interface.fim_jogo()
-					break
-				elif user_cmd.lower() == 'p':
-					interface.stop()
-					break
-				elif user_cmd.lower() in ('w', 's', 'd', 'e'):
-					print("Modo de jogo automatico!!")
-				else:
-					print("Comando desconhecido")
-
-			caca_a_validar = shared_obj.get(SharedObj.AutomaticoValidarCaca)
-			if caca_a_validar:
-				ok = input("Digite 1 para validar a caca ou 0 para invalidar: ")
-				if not int(ok):
-					pos_x = input("Digite a coordenada x: ")
-					pos_y = input("Digite a coordenada y: ")
-					pos = (int(pos_x), int(pos_y))
-					shared_obj.set(SharedObj.AutomaticoPosicao, pos)
-				else:
-					cacas_atuais = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
-					posicao = shared_obj.get(SharedObj.AutomaticoPosicao)
-					cacas_atuais.remove(posicao)
-					shared_obj.set(SharedObj.InterfaceCacasAtualizadas, cacas_atuais)
-
-				shared_obj.set(SharedObj.AutomaticoValidarCaca, 0)
-
-			sleep(0.1)
-
-
-
-
-
-
-
+	transmissor = Transmissor("localhost", 50015)
+	transmissor.run()
 
 
 

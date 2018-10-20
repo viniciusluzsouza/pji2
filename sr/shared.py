@@ -1,4 +1,4 @@
-from threading import Lock
+from threading import Lock, Event
 from copy import deepcopy
 
 
@@ -16,6 +16,10 @@ class SharedObj(object):
 	InterfaceCacasAtualizadas = 31
 	InterfacePauseContinua = 32
 
+	TransmitirLock = 40
+	TransmitirMsg = 41
+	TransmitirResp = 42
+
 	def __init__(self,):
 		self.lock_dict = {
 			SharedObj.MoverMovimento: Lock(),
@@ -26,6 +30,9 @@ class SharedObj(object):
 			SharedObj.InterfaceFimJogo: Lock(),
 			SharedObj.InterfaceCacasAtualizadas: Lock(),
 			SharedObj.InterfacePauseContinua: Lock(),
+			SharedObj.TransmitirLock: Lock(),
+			SharedObj.TransmitirMsg: Event(),
+			SharedObj.TransmitirResp: Event()
 		}
 		
 		self.variables_dict = {
@@ -36,18 +43,50 @@ class SharedObj(object):
 			SharedObj.AutomaticoPosicao: (0, 0),
 			SharedObj.InterfaceFimJogo: 0,
 			SharedObj.InterfaceCacasAtualizadas: [],
-			SharedObj.InterfacePauseContinua: 0
+			SharedObj.InterfacePauseContinua: 0,
+			SharedObj.TransmitirMsg: {},
+			SharedObj.TransmitirResp: {}
 		}
 
 		self.acceptable = [SharedObj.MoverMovimento, SharedObj.MoverHistorico, \
 		SharedObj.ManualMovimento, SharedObj.AutomaticoValidarCaca, SharedObj.AutomaticoPosicao, \
-		SharedObj.InterfaceFimJogo, SharedObj.InterfaceCacasAtualizadas, SharedObj.InterfacePauseContinua]
+		SharedObj.InterfaceFimJogo, SharedObj.InterfaceCacasAtualizadas, SharedObj.InterfacePauseContinua, \
+		SharedObj.TransmitirLock, SharedObj.TransmitirMsg, SharedObj.TransmitirResp]
 
 	def _acceptable(self, var):
 		if var not in self.acceptable:
 			return False
 		else:
 			return True
+
+	def wait_event(self, var):
+		if not self._acceptable(var):
+			return
+
+		if type(self.lock_dict[var]) is not Event:
+			return
+
+		self.lock_dict[var].wait()
+
+	def set_event(self, var):
+		if not self._acceptable(var):
+			return
+
+		if type(self.lock_dict[var]) is not Event:
+			return
+
+		self.lock_dict[var].set()
+
+
+	def clear_event(self, var):
+		if not self._acceptable(var):
+			return
+
+		if type(self.lock_dict[var]) is not Event:
+			return
+
+		self.lock_dict[var].clear()
+
 
 	def set(self, var, value):
 		if not self._acceptable(var):

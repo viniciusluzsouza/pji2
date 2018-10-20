@@ -126,35 +126,80 @@ class Automatico(Thread):
 
 	def _valida_caca(self, posicao):
 		global shared_obj
-		shared_obj.set(SharedObj.AutomaticoValidarCaca, 1)
-		ret = True
-		while True:
-			if shared_obj.get(SharedObj.AutomaticoValidarCaca):
-				sleep(1)
-				continue
+		msg = {'cmd': MsgSRtoSS.ValidaCaca, 'x': posicao[0], 'y': posicao[1]}
+		resp = self._envia_msg(msg)
 
-			posicao_validada = shared_obj.get(SharedObj.AutomaticoPosicao)
-			if posicao_validada != posicao:
-				# Caca invalidada!! Ajusta posicao!!
-				ret = False
-				posicao = posicao_validada
-			else:
-				self.cacas_encontradas.append(posicao)
+		if 'ack' in resp and resp['ack']:
+			self._x = posicao[0]
+			self._y = posicao[1]
+			self.cacas_encontradas.append()
+			self.cacas_ordenadas.remove(posicao)
+			return 1
 
-			break
+		if 'buffer' in resp:
+			buf = resp['buffer']
+			if 'x' in buf: self._x = buf['x']
+			if 'y' in buf: self._y = buf['y']
+			return 0
 
-		self._x = posicao[0]
-		self._y = posicao[1]
-		# TODO: self.movedor.atualiza_coord(posicao)
-		return ret
+		else:
+			return 0
+
+	def _calc_next_coord(self, direcao, coord=None):
+		coord_x = self._x
+		coord_y = self._y
+
+		if coord is not None:
+			coord_x = coord[0]
+			coord_y = coord[1]
+
+		if self.coord_inicial == (0, 0):
+			if direcao == Mover.FRENTE:
+				coord_y += 1
+			elif direcao == Mover.DIREITA:
+				coord_x += 1
+			elif direcao == Mover.TRAS:
+				coord_y -= 1
+			elif direcao == Mover.ESQUERDA:
+				coord_x -= 1
+
+		elif self.coord_inicial == (6, 6):
+			if direcao == Mover.FRENTE:
+				coord_y -= 1
+			elif direcao == Mover.DIREITA:
+				coord_x -= 1
+			elif direcao == Mover.TRAS:
+				coord_y += 1
+			elif direcao == Mover.ESQUERDA:
+				coord_x += 1
+
+		return (coord_x, coord_y)
+
+	def _envia_msg(self, msg):
+		shared_obj.acquire(SharedObj.TransmitirLock)
+		shared_obj.set_directly(SharedObj.TransmitirMsg, msg)
+		shared_obj.set_event(SharedObj.TransmitirMsg)
+
+		shared_obj.wait_event(SharedObj.TransmitirResp)
+		resp = shared_obj.get_directly(SharedObj.TransmitirResp)
+		shared_obj.clear_event(SharedObj.TransmitirResp)
+		shared_obj.release(SharedObj.TransmitirLock)
+		return resp
 
 
-	def informa_movimento(self, direcao):
-		# TODO: Implementacao para avisar SS
-		print("Indo para %d" % direcao)
+	def informa_movimento_ss(self, direcao):
+		global shared_obj
+		proxima_coord = self._calc_next_coord(direcao)
+		msg = {'cmd': MsgSRtoSS.MovendoPara, 'x': proxima_coord[0], 'y': proxima_coord[1]}
+		self._envia_msg(msg)
 
+	def informa_posicao(self):
+		global shared_obj
+		msg = {'cmd': MsgSRtoSS.PosicaoAtual, 'x': self._x, 'y': self._y}
+		self._envia_msg(msg)
 
 	def atualiza_cacas(self):
+		# TODO: Implementar via rede
 		global shared_obj
 		self.cacas_ordenadas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
 		self._ordena_cacas()
@@ -182,7 +227,7 @@ class Automatico(Thread):
 			if self._verifica_pausa() == Mover.EXIT:
 				return
 			direcao = direcoes.pop(0)
-			self.informa_movimento(direcao)
+			self.informa_movimento_ss(direcao)
 			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
 				shared_obj.set(SharedObj.MoverMovimento, direcao)
 
@@ -217,7 +262,7 @@ class Automatico(Thread):
 				# FIM DO JOGO
 				break
 
-			self.atualiza_cacas()
+			# self.atualiza_cacas()
 
 		self._finaliza_tudo()
 		print("FINALIZANDO ....")
