@@ -30,3 +30,10 @@ class MsgSRtoSS(object):
 	ObstaculoEncontrado = 1003
 
 	NovoJogoConfigurado = 1100
+
+class MsgRoboErro(object):
+	"""docstring for ErroMsgSStoS"""
+	MsgFormatoInvalido = 1000
+	MsgSemComando = 1001
+	ComandoInvalido = 1002
+	ParametroNaoInformado = 1003

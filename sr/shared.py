@@ -6,6 +6,7 @@ class SharedObj(object):
 	"""Manager for shared objects."""
 	MoverMovimento = 0
 	MoverHistorico = 1
+	MoverCoordenada = 2
 
 	ManualMovimento = 10
 
@@ -19,36 +20,48 @@ class SharedObj(object):
 	TransmitirLock = 40
 	TransmitirEvent = 41
 
+	InterfaceEvent = 50
+	InterfaceEventMsg = 51
+	InterfaceRespEvent = 52
+	InterfaceRespMsg = 53
+
 	def __init__(self,):
 		self.lock_dict = {
+			SharedObj.MoverCoordenada: Lock(),
 			SharedObj.MoverMovimento: Lock(),
 			SharedObj.MoverHistorico: Lock(),
 			SharedObj.ManualMovimento: Lock(),
 			SharedObj.AutomaticoValidarCaca: Lock(),
-			SharedObj.AutomaticoPosicao: Lock(),
 			SharedObj.InterfaceFimJogo: Lock(),
 			SharedObj.InterfaceCacasAtualizadas: Lock(),
 			SharedObj.InterfacePauseContinua: Lock(),
 			SharedObj.TransmitirLock: Lock(),
 			SharedObj.TransmitirEvent: Event(),
+			SharedObj.InterfaceEvent: Event(),
+			SharedObj.InterfaceEventMsg: Lock(),
+			SharedObj.InterfaceRespEvent: Event(),
+			SharedObj.InterfaceRespMsg: Lock(),
 		}
 		
 		self.variables_dict = {
+			SharedObj.MoverCoordenada: (0,0)
 			SharedObj.MoverMovimento: 0,
 			SharedObj.MoverHistorico: [],
 			SharedObj.ManualMovimento: 0,
 			SharedObj.AutomaticoValidarCaca: 0,
-			SharedObj.AutomaticoPosicao: (0, 0),
 			SharedObj.InterfaceFimJogo: 0,
 			SharedObj.InterfaceCacasAtualizadas: [],
 			SharedObj.InterfacePauseContinua: 0,
 			SharedObj.TransmitirLock: {},
+			SharedObj.InterfaceEventMsg: {},
+			SharedObj.InterfaceRespMsg: {},
 		}
 
-		self.acceptable = [SharedObj.MoverMovimento, SharedObj.MoverHistorico, \
-		SharedObj.ManualMovimento, SharedObj.AutomaticoValidarCaca, SharedObj.AutomaticoPosicao, \
-		SharedObj.InterfaceFimJogo, SharedObj.InterfaceCacasAtualizadas, SharedObj.InterfacePauseContinua, \
-		SharedObj.TransmitirLock, SharedObj.TransmitirEvent]
+		self.acceptable = [SharedObj.MoverCoordenada, SharedObj.MoverMovimento, SharedObj.MoverHistorico, \
+		SharedObj.ManualMovimento, SharedObj.AutomaticoValidarCaca, SharedObj.InterfaceFimJogo, \
+		SharedObj.InterfaceCacasAtualizadas, SharedObj.InterfacePauseContinua, \
+		SharedObj.TransmitirLock, SharedObj.TransmitirEvent, SharedObj.InterfaceEvent, \
+		SharedObj.InterfaceEventMsg, SharedObj.InterfaceRespEvent, SharedObj.InterfaceRespMsg]
 
 	def _acceptable(self, var):
 		if var not in self.acceptable:

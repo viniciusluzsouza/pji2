@@ -51,13 +51,11 @@ class Mover(Thread):
 		super(Mover, self).__init__()
 
 
-	def _calc_next_coord(self, direcao, coord=None):
-		coord_x = self._coord_x
-		coord_y = self._coord_y
-
-		if coord is not None:
-			coord_x = coord[0]
-			coord_y = coord[1]
+	def _calc_next_coord(self, direcao):
+		global shared_obj
+		coord = shared_obj.get(SharedObj.MoverCoordenada)
+		coord_x = coord[0]
+		coord_y = coord[1]
 
 		if self._coord_ini == (0, 0):
 			if direcao == Mover.FRENTE:
@@ -110,7 +108,8 @@ class Mover(Thread):
 		shared_obj.release(SharedObj.MoverMovimento)
 
 
-	def move(self, direcao, coord_atual=None):
+	def move(self, direcao):
+		global shared_obj
 		"""Move em uma direcao (frente, direita, esquerda, tras).
 			Se for passada a mesma direcao, calibra e segue em fente"""
 
@@ -120,8 +119,9 @@ class Mover(Thread):
 		if self._verifica_pausa() == Mover.EXIT:
 			return
 
-		calc_coord = self._calc_next_coord(direcao, coord_atual)
+		calc_coord = self._calc_next_coord(direcao)
 		self._next_coord = calc_coord
+		shared_obj.set(SharedObj.MoverCoordenada, calc_coord)
 		print("\nindo para: %s" % str(calc_coord))
 
 		sleep(2)
@@ -136,7 +136,6 @@ class Mover(Thread):
 		self._finalizar_movimento()
 
 		#Salvar os movimentos no historico
-		global shared_obj
 		if direcao != Mover.PARADO and direcao != Mover.EXIT:
 			shared_obj.append_list(SharedObj.MoverHistorico, direcao)
 

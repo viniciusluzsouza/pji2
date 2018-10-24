@@ -11,7 +11,6 @@ class Automatico(Thread):
 	"""Busca cacas de maneira autonoma"""
 	def __init__(self, coord, cacas):
 		global shared_obj
-		shared_obj.set(SharedObj.AutomaticoPosicao, coord)
 		self.posicao_inicial = coord
 		self.cacas = cacas
 		self.cacas_ordenadas = cacas
@@ -124,9 +123,12 @@ class Automatico(Thread):
 					return Mover.EXIT
 
 
-	def _valida_caca(self, posicao):
+	def _valida_caca(self):
 		global shared_obj
+		posicao = shared_obj.get(SharedObj.MoverCoordenada)
 		msg = {'cmd': MsgSRtoSS.ValidaCaca, 'x': posicao[0], 'y': posicao[1]}
+
+		### TODO :: PAREI AQUI !!!!
 		resp = self._envia_msg(msg)
 
 		if 'ack' in resp and resp['ack']:
@@ -236,8 +238,6 @@ class Automatico(Thread):
 
 			self.historico_mov.append(direcao)
 
-		return caca
-
 
 	def run(self):
 		global shared_obj
@@ -248,12 +248,11 @@ class Automatico(Thread):
 			if self._verifica_pausa() == Mover.EXIT:
 				break
 
-			posicao = self._go()
+			self._go()
 			if shared_obj.get(SharedObj.InterfaceFimJogo):
 				break
 
-			shared_obj.set(SharedObj.AutomaticoPosicao, posicao)
-			validacao = self._valida_caca(posicao)
+			validacao = self._valida_caca()
 			if validacao:
 				print("\nCACA VALIDADA!!\n")
 				
