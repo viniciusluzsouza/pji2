@@ -5,6 +5,7 @@ from mover_test import *
 from shared import *
 from receptor import Receptor
 from transmissor import Transmissor
+from time import sleep
 
 
 class ModoDeJogo(object):
@@ -108,9 +109,24 @@ class InterfaceSR(object):
 
 
 if __name__ == "__main__":
-	interface = InterfaceSR()
-	transmissor = Transmissor("localhost", 50015)
-	transmissor.run()
+	#interface = InterfaceSR()
+	transmissor = Transmissor("localhost")
+	transmissor.start()
+
+	receptor = Receptor("localhost")
+	receptor.start()
+
+	for cmd in range (1000, 1004):
+		print("ENTER PARA ENVIAR MENSAGEM AO SS")
+		raw_input()
+
+		msg = {'cmd': cmd}
+		shared_obj.set(SharedObj.TransmitirLock, msg)
+		shared_obj.set_event(SharedObj.TransmitirEvent)
+
+		sleep(2)
+
+
 
 
 

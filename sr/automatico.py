@@ -241,7 +241,7 @@ class Automatico(Thread):
 
 	def run(self):
 		global shared_obj
-		# Primeira vez só ordena as cacas e sai cavando
+		# Primeira vez so ordena as cacas e sai cavando
 		self._ordena_cacas()
 		while True:
 			print("Verifica pausa RUN")

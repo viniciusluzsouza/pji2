@@ -29,4 +29,4 @@ class MsgSRtoSS(object):
 	ValidaCaca = 1002
 	ObstaculoEncontrado = 1003
 
-	GetPosicaoAdversario = 1100
+	NovoJogoConfigurado = 1100

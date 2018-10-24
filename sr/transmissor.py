@@ -1,33 +1,37 @@
 import zmq
+import pika
+import json
 from threading import Thread, Event
 from shared import *
 
-class Transmissor(object):
+class Transmissor(Thread):
 	"""docstring for TransmissoSR"""
 
-	def __init__(self, host, port):
-		self.context = zmq.Context()
-		self.p = "tcp://" + str(host) + ":" + str(port)
-
-		self.sock = self.context.socket(zmq.REQ)
-		self.sock.bind(self.p)
-
+	def __init__(self, host):
 		super(Transmissor, self).__init__()
 
+		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host)))
+		self.channel = self.connection.channel()
+		self.channel.queue_declare(queue='SR_to_SS')
 
-		def run(self):
-			global shared_obj
-			while True:
-				# Espera até ter uma mensagem a transmitir
-				shared_obj.wait_event(SharedObj.TransmitirMsg)
-				msg = shared_obj.get(SharedObj.TransmitirMsg)
 
-				try:
-					self.sock.send_json(msg)
-					resp = self.sock.recv_json()
-				except:
-					resp = {'ack': 0, 'erro': -1}
+	def run(self):
+		global shared_obj
+		while True:
+			# Espera ate ter uma mensagem a transmitir
+			shared_obj.wait_event(SharedObj.TransmitirEvent)
 
-				shared_obj.set(SharedObj.TransmitirResp, resp)
-				shared_obj.set_event(SharedObj.TransmitirResp)
-				shared_obj.clear_event(SharedObj.TransmitirMsg)
+			# Bloqueia enquanto a mensagem e enviada
+			shared_obj.acquire(SharedObj.TransmitirLock)
+			msg = shared_obj.get_directly(SharedObj.TransmitirLock)
+
+			try:
+				msg = json.dumps(msg)
+				self.channel.basic_publish(exchange='', routing_key='SR_to_SS', body=msg)
+			except:
+				pass
+
+			shared_obj.clear_event(SharedObj.TransmitirEvent)
+			shared_obj.release(SharedObj.TransmitirLock)
+
+		self.connection.close()

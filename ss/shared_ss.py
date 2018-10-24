@@ -34,10 +34,10 @@ class SharedObj(object):
 		}
 		
 		self.variables_dict = {
-			SharedObj.MensagemGerente = {},
-			SharedObj.RespostaGerente = {},
+			SharedObj.MensagemGerente: {},
+			SharedObj.RespostaGerente: {},
 
-			SharedObj.InterfaceMsg = {},
+			SharedObj.InterfaceMsg: {},
 
 			SharedObj.TransmitirSALock: {},
 
@@ -45,7 +45,7 @@ class SharedObj(object):
 		}
 
 		self.acceptable = [ SharedObj.SolicitaGerente, SharedObj.MensagemGerente, SharedObj.RespostaGerente, \
-		SharedObj.TransmitirSALock, SharedObj.TransmitirSRLock ]
+		SharedObj.TransmitirSALock, SharedObj.TransmitirSAEvent, SharedObj.TransmitirSRLock, SharedObj.TransmitirSREvent ]
 
 	def _acceptable(self, var):
 		if var not in self.acceptable:
@@ -57,16 +57,10 @@ class SharedObj(object):
 		if not self._acceptable(var):
 			return
 
-		if type(self.lock_dict[var]) is not Event:
-			return
-
 		self.lock_dict[var].wait()
 
 	def set_event(self, var):
 		if not self._acceptable(var):
-			return
-
-		if type(self.lock_dict[var]) is not Event:
 			return
 
 		self.lock_dict[var].set()
@@ -74,9 +68,6 @@ class SharedObj(object):
 
 	def clear_event(self, var):
 		if not self._acceptable(var):
-			return
-
-		if type(self.lock_dict[var]) is not Event:
 			return
 
 		self.lock_dict[var].clear()

@@ -70,7 +70,7 @@ class Manual(Thread):
 			if mut_manual == Mover.EXIT:
 				shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 
-			# Mutex movimento é do mover (aguarda finalizar o movimento)
+			# Mutex movimento e do mover (aguarda finalizar o movimento)
 			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
 				break
 

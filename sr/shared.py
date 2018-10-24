@@ -17,8 +17,7 @@ class SharedObj(object):
 	InterfacePauseContinua = 32
 
 	TransmitirLock = 40
-	TransmitirMsg = 41
-	TransmitirResp = 42
+	TransmitirEvent = 41
 
 	def __init__(self,):
 		self.lock_dict = {
@@ -31,8 +30,7 @@ class SharedObj(object):
 			SharedObj.InterfaceCacasAtualizadas: Lock(),
 			SharedObj.InterfacePauseContinua: Lock(),
 			SharedObj.TransmitirLock: Lock(),
-			SharedObj.TransmitirMsg: Event(),
-			SharedObj.TransmitirResp: Event()
+			SharedObj.TransmitirEvent: Event(),
 		}
 		
 		self.variables_dict = {
@@ -44,14 +42,13 @@ class SharedObj(object):
 			SharedObj.InterfaceFimJogo: 0,
 			SharedObj.InterfaceCacasAtualizadas: [],
 			SharedObj.InterfacePauseContinua: 0,
-			SharedObj.TransmitirMsg: {},
-			SharedObj.TransmitirResp: {}
+			SharedObj.TransmitirLock: {},
 		}
 
 		self.acceptable = [SharedObj.MoverMovimento, SharedObj.MoverHistorico, \
 		SharedObj.ManualMovimento, SharedObj.AutomaticoValidarCaca, SharedObj.AutomaticoPosicao, \
 		SharedObj.InterfaceFimJogo, SharedObj.InterfaceCacasAtualizadas, SharedObj.InterfacePauseContinua, \
-		SharedObj.TransmitirLock, SharedObj.TransmitirMsg, SharedObj.TransmitirResp]
+		SharedObj.TransmitirLock, SharedObj.TransmitirEvent]
 
 	def _acceptable(self, var):
 		if var not in self.acceptable:
@@ -63,16 +60,10 @@ class SharedObj(object):
 		if not self._acceptable(var):
 			return
 
-		if type(self.lock_dict[var]) is not Event:
-			return
-
 		self.lock_dict[var].wait()
 
 	def set_event(self, var):
 		if not self._acceptable(var):
-			return
-
-		if type(self.lock_dict[var]) is not Event:
 			return
 
 		self.lock_dict[var].set()
@@ -80,9 +71,6 @@ class SharedObj(object):
 
 	def clear_event(self, var):
 		if not self._acceptable(var):
-			return
-
-		if type(self.lock_dict[var]) is not Event:
 			return
 
 		self.lock_dict[var].clear()

@@ -1,7 +1,7 @@
 from threading import Thread
 from shared_ss import *
 from mensagens_robo import *
-from mensagem_auditor import *
+from mensagens_auditor import *
 
 class ModoDeJogo(object):
 	MANUAL = 1
@@ -38,13 +38,13 @@ class Gerenciador(Thread):
 		return resp
 
 	def sa_novo_jogo(self, msg):
-		# Primeiro, verifica se os parâmetros estão corretos.
-		# Caso não estejam, nem envia solicitacao ao SR, envia erro ao SA
+		# Primeiro, verifica se os parametros estao corretos.
+		# Caso nao estejam, nem envia solicitacao ao SR, envia erro ao SA
 		check = self._check_novo_jogo(msg)
 		if not check['ack']:
 			shared_obj.set(SharedObj.TransmitirSALock, check)
 			shared_obj.set_event(SharedObj.TransmitirSAEvent)
-			continue
+			return
 
 		# Tudo ok, envia mensagem ao SR
 		shared_obj.set(SharedObj.TransmitirSRLock, msg)
@@ -52,7 +52,7 @@ class Gerenciador(Thread):
 		shared_obj.set_event(SharedObj.TransmitirSREvent)
 
 		# Ao enviar um novo jogo ao SR, a mensagem "NovoJogoConfigurado"
-		# deve ser a confirmação que o jogo foi configurado
+		# deve ser a confirmacao que o jogo foi configurado
 		shared_obj.wait_event(SharedObj.SolicitaGerente)
 		ack = shared_obj.get(SharedObj.MensagemGerente)
 		if ack['cmd'] == MsgSRtoSS.NovoJogoConfigurado:
@@ -68,7 +68,8 @@ class Gerenciador(Thread):
 			# Espera alguma mensagem ...
 			shared_obj.wait_event(SharedObj.SolicitaGerente)
 
-			msg = shared_obj.get(SharedObj.MensagemGerente)
+			shared_obj.acquire(SharedObj.MensagemGerente)
+			msg = shared_obj.get_directly(SharedObj.MensagemGerente)
 			if 'cmd' not in msg:
 				continue
 
@@ -79,46 +80,54 @@ class Gerenciador(Thread):
 				self.sa_novo_jogo(msg)
 
 			elif cmd == MsgSAtoSS.Pausa:
-				# Avisa interface usuário
-				shared_obj.set(SharedObj.InterfaceMsg, msg)
-				shared_obj.set_event(SharedObj.InterfaceEvent)
+				# Avisa interface usuario
+				# shared_obj.set(SharedObj.InterfaceMsg, msg)
+				# shared_obj.set_event(SharedObj.InterfaceEvent)
 
 				# Transmite para SR
 				shared_obj.set(SharedObj.TransmitirSRLock, msg)
 				shared_obj.set_event(SharedObj.TransmitirSREvent)
 
 			elif cmd == MsgSAtoSS.FimJogo:
-				
+				# Transmite para SR
+				shared_obj.set(SharedObj.TransmitirSRLock, msg)
+				shared_obj.set_event(SharedObj.TransmitirSREvent)
 
 			# Solicitacoes vindas do SR
 			elif cmd == MsgSRtoSS.MovendoPara:
-				# Avisa interface usuário
-				shared_obj.set(SharedObj.InterfaceMsg, msg)
-				shared_obj.set_event(SharedObj.InterfaceEvent)
+				print("MOVENDO PARA")
+				# # Avisa interface usuario
+				# shared_obj.set(SharedObj.InterfaceMsg, msg)
+				# shared_obj.set_event(SharedObj.InterfaceEvent)
 
-				# Transmite para SA
+				# # Transmite para SA
 				shared_obj.set(SharedObj.TransmitirSALock, msg)
 				shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
 			elif cmd == MsgSRtoSS.PosicaoAtual:
-				shared_obj.set(SharedObj.InterfaceMsg, msg)
-				shared_obj.set_event(SharedObj.InterfaceEvent)
+				print("POSICAO ATUAL")
+				# shared_obj.set(SharedObj.InterfaceMsg, msg)
+				# shared_obj.set_event(SharedObj.InterfaceEvent)
 				shared_obj.set(SharedObj.TransmitirSALock, msg)
 				shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
 			elif cmd == MsgSRtoSS.ValidaCaca:
-				shared_obj.set(SharedObj.InterfaceMsg, msg)
-				shared_obj.set_event(SharedObj.InterfaceEvent)
+				print("VALIDA CACA")
+				# shared_obj.set(SharedObj.InterfaceMsg, msg)
+				# shared_obj.set_event(SharedObj.InterfaceEvent)
 				shared_obj.set(SharedObj.TransmitirSALock, msg)
 				shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
 			elif cmd == MsgSRtoSS.ObstaculoEncontrado:
-				shared_obj.set(SharedObj.InterfaceMsg, msg)
-				shared_obj.set_event(SharedObj.InterfaceEvent)
+				print("OBSTACULO ENCONTRADO")
+				# shared_obj.set(SharedObj.InterfaceMsg, msg)
+				# shared_obj.set_event(SharedObj.InterfaceEvent)
 				shared_obj.set(SharedObj.TransmitirSALock, msg)
 				shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
+			else:
+				pass
 
-
+			shared_obj.release(SharedObj.MensagemGerente)
 			shared_obj.clear_event(SharedObj.SolicitaGerente)
 
