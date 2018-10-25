@@ -24,9 +24,14 @@ class Gerenciador(Thread):
 			resp['param'] = 'modo_jogo'
 			return resp
 
-		if 'coord_inicial' not in msg:
+		if 'x' not in msg:
 			resp['erro'] = MsgAuditorErro.ParametroNaoInformado
-			resp['param'] = 'coord_inicial'
+			resp['param'] = 'x'
+			return resp
+
+		if 'y' not in msg:
+			resp['erro'] = MsgAuditorErro.ParametroNaoInformado
+			resp['param'] = 'y'
 			return resp
 
 		if msg['modo_jogo'] == ModoDeJogo.AUTOMATICO \
@@ -38,6 +43,7 @@ class Gerenciador(Thread):
 		return resp
 
 	def sa_novo_jogo(self, msg):
+		global shared_obj
 		# Primeiro, verifica se os parametros estao corretos.
 		# Caso nao estejam, nem envia solicitacao ao SR, envia erro ao SA
 		check = self._check_novo_jogo(msg)
@@ -48,19 +54,25 @@ class Gerenciador(Thread):
 
 		# Tudo ok, envia mensagem ao SR
 		shared_obj.set(SharedObj.TransmitirSRLock, msg)
+		shared_obj.release(SharedObj.MensagemGerente)
 		shared_obj.clear_event(SharedObj.SolicitaGerente)
 		shared_obj.set_event(SharedObj.TransmitirSREvent)
 
 		# Ao enviar um novo jogo ao SR, a mensagem "NovoJogoConfigurado"
 		# deve ser a confirmacao que o jogo foi configurado
 		shared_obj.wait_event(SharedObj.SolicitaGerente)
-		ack = shared_obj.get(SharedObj.MensagemGerente)
+		shared_obj.acquire(SharedObj.MensagemGerente)
+		ack = shared_obj.get_directly(SharedObj.MensagemGerente)
 		if ack['cmd'] == MsgSRtoSS.NovoJogoConfigurado:
 			# Ok, jogo configurado !!
 			# Aqui podemos colocar check de posicao!!
 			self.jogo_em_andamento = 1
 			self.modo_jogo = msg['modo_jogo']
 
+			# Inicia jogo IniciaJogo
+			shared_obj.clear_event(SharedObj.TransmitirSREvent)
+			shared_obj.set(SharedObj.TransmitirSRLock, {'cmd': MsgSStoSR.IniciaJogo})
+			shared_obj.set_event(SharedObj.TransmitirSREvent)
 
 	def run(self):
 		global shared_obj
@@ -93,6 +105,11 @@ class Gerenciador(Thread):
 				shared_obj.set(SharedObj.TransmitirSRLock, msg)
 				shared_obj.set_event(SharedObj.TransmitirSREvent)
 
+			elif cmd == MsgSAtoSS.ValidacaoCaca:
+				# Transmite para SR
+				shared_obj.set(SharedObj.TransmitirSRLock, msg)
+				shared_obj.set_event(SharedObj.TransmitirSREvent)
+
 			# Solicitacoes vindas do SR
 			elif cmd == MsgSRtoSS.MovendoPara:
 				print("MOVENDO PARA")
@@ -112,7 +129,7 @@ class Gerenciador(Thread):
 				shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
 			elif cmd == MsgSRtoSS.ValidaCaca:
-				print("VALIDA CACA")
+				print("VALIDA CACA (stub sa valida)")
 				# shared_obj.set(SharedObj.InterfaceMsg, msg)
 				# shared_obj.set_event(SharedObj.InterfaceEvent)
 				shared_obj.set(SharedObj.TransmitirSALock, msg)
@@ -120,6 +137,13 @@ class Gerenciador(Thread):
 
 			elif cmd == MsgSRtoSS.ObstaculoEncontrado:
 				print("OBSTACULO ENCONTRADO")
+				# shared_obj.set(SharedObj.InterfaceMsg, msg)
+				# shared_obj.set_event(SharedObj.InterfaceEvent)
+				shared_obj.set(SharedObj.TransmitirSALock, msg)
+				shared_obj.set_event(SharedObj.TransmitirSAEvent)
+
+			elif cmd == MsgSRtoSS.NovoJogoConfigurado:
+				print("NOVO JOGO CONFIGURADO")
 				# shared_obj.set(SharedObj.InterfaceMsg, msg)
 				# shared_obj.set_event(SharedObj.InterfaceEvent)
 				shared_obj.set(SharedObj.TransmitirSALock, msg)

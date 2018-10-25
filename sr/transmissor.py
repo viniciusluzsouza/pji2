@@ -19,16 +19,20 @@ class Transmissor(Thread):
 		global shared_obj
 		while True:
 			# Espera ate ter uma mensagem a transmitir
+			print("aguardando para transmitir ....")
 			shared_obj.wait_event(SharedObj.TransmitirEvent)
 
+			print("ok, irei transmitir")
 			# Bloqueia enquanto a mensagem e enviada
 			shared_obj.acquire(SharedObj.TransmitirLock)
 			msg = shared_obj.get_directly(SharedObj.TransmitirLock)
+			print("msg: %s" % str(msg))
 
 			try:
 				msg = json.dumps(msg)
 				self.channel.basic_publish(exchange='', routing_key='SR_to_SS', body=msg)
 			except:
+				print("excecao")
 				pass
 
 			shared_obj.clear_event(SharedObj.TransmitirEvent)

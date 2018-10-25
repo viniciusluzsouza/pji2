@@ -60,6 +60,9 @@ class Mover(Thread):
 		self._coord_y = y
 		self._next_coord = (x, y)
 
+		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
+		shared_obj.set(SharedObj.MoverCoordenada, self._coord_ini)
+
 		super(Mover, self).__init__()
 
 
@@ -140,6 +143,7 @@ class Mover(Thread):
 
 	def _calc_next_coord(self, direcao):
 		global shared_obj
+		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
 		coord = shared_obj.get(SharedObj.MoverCoordenada)
 		coord_x = coord[0]
 		coord_y = coord[1]
@@ -164,6 +168,7 @@ class Mover(Thread):
 			elif direcao == Mover.ESQUERDA:
 				coord_x += 1
 
+		shared_obj.set_event(SharedObj.MoverCoordenadaEvent)
 		return (coord_x, coord_y)
 
 

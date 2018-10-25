@@ -7,7 +7,9 @@ class MsgSAtoSS(object):
 	Pausa = 1101
 	FimJogo = 1102
 
-	AtualizaMapa = 1200,
+	AtualizaMapa = 1200
+
+	ValidacaoCaca = 2000
 
 
 class MsgSStoSA(object):

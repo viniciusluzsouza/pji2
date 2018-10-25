@@ -7,6 +7,7 @@ class MsgSStoSR(object):
 	Pausa = 1101
 	FimJogo = 1102
 	Mover = 1103
+	IniciaJogo = 1104
 
 	AtualizaMapa = 1200
 

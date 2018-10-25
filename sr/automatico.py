@@ -5,7 +5,9 @@ from threading import Thread, Lock
 from shared import *
 from time import sleep
 from copy import deepcopy
-
+from mensagens_robo import *
+from receptor import *
+from transmissor import *
 
 class Automatico(Thread):
 	"""Busca cacas de maneira autonoma"""
@@ -128,84 +130,49 @@ class Automatico(Thread):
 		posicao = shared_obj.get(SharedObj.MoverCoordenada)
 		msg = {'cmd': MsgSRtoSS.ValidaCaca, 'x': posicao[0], 'y': posicao[1]}
 
-		### TODO :: PAREI AQUI !!!!
-		resp = self._envia_msg(msg)
+		shared_obj.clear_event(SharedObj.InterfaceRespValidaCacaEvent)
+		self._envia_msg(msg)
+		shared_obj.wait_event(SharedObj.InterfaceRespValidaCacaEvent)
+		resp = shared_obj.get(SharedObj.InterfaceRespValidaCacaMsg)
 
-		if 'ack' in resp and resp['ack']:
-			self._x = posicao[0]
-			self._y = posicao[1]
-			self.cacas_encontradas.append()
-			self.cacas_ordenadas.remove(posicao)
-			return 1
+		if 'ack' in resp:
+			if resp['ack']:
+				# Caca validada!
+				self._x = posicao[0]
+				self._y = posicao[1]
+				self.cacas_encontradas.append(posicao)
+				return (True, False)	# Retorna caca validada e posicao nao reajustada
 
-		if 'buffer' in resp:
-			buf = resp['buffer']
-			if 'x' in buf: self._x = buf['x']
-			if 'y' in buf: self._y = buf['y']
-			return 0
+			elif 'x' in resp and 'y' in resp:
+				self._x = resp['x']
+				self._y = resp['y']
+				shared_obj.set(SharedObj.MoverCoordenada, (self._x, self._y))
+				return (False, True)	# Retorna caca nao validada e posicao reajustada
 
-		else:
-			return 0
-
-	def _calc_next_coord(self, direcao, coord=None):
-		coord_x = self._x
-		coord_y = self._y
-
-		if coord is not None:
-			coord_x = coord[0]
-			coord_y = coord[1]
-
-		if self.coord_inicial == (0, 0):
-			if direcao == Mover.FRENTE:
-				coord_y += 1
-			elif direcao == Mover.DIREITA:
-				coord_x += 1
-			elif direcao == Mover.TRAS:
-				coord_y -= 1
-			elif direcao == Mover.ESQUERDA:
-				coord_x -= 1
-
-		elif self.coord_inicial == (6, 6):
-			if direcao == Mover.FRENTE:
-				coord_y -= 1
-			elif direcao == Mover.DIREITA:
-				coord_x -= 1
-			elif direcao == Mover.TRAS:
-				coord_y += 1
-			elif direcao == Mover.ESQUERDA:
-				coord_x += 1
-
-		return (coord_x, coord_y)
+		return (False, False)	# Caso de erro: nao conseguiu validar e nem ajustar posicao
 
 	def _envia_msg(self, msg):
-		shared_obj.acquire(SharedObj.TransmitirLock)
-		shared_obj.set_directly(SharedObj.TransmitirMsg, msg)
-		shared_obj.set_event(SharedObj.TransmitirMsg)
-
-		shared_obj.wait_event(SharedObj.TransmitirResp)
-		resp = shared_obj.get_directly(SharedObj.TransmitirResp)
-		shared_obj.clear_event(SharedObj.TransmitirResp)
-		shared_obj.release(SharedObj.TransmitirLock)
-		return resp
-
-
-	def informa_movimento_ss(self, direcao):
 		global shared_obj
-		proxima_coord = self._calc_next_coord(direcao)
-		msg = {'cmd': MsgSRtoSS.MovendoPara, 'x': proxima_coord[0], 'y': proxima_coord[1]}
+		shared_obj.set(SharedObj.TransmitirLock, msg)
+		shared_obj.set_event(SharedObj.TransmitirEvent)
+
+	def _informa_movimento_ss(self, x, y):
+		global shared_obj
+		msg = {'cmd': MsgSRtoSS.MovendoPara, 'x': x, 'y': y}
 		self._envia_msg(msg)
 
-	def informa_posicao(self):
+	def _informa_posicao(self):
 		global shared_obj
-		msg = {'cmd': MsgSRtoSS.PosicaoAtual, 'x': self._x, 'y': self._y}
+		posicao = shared_obj.get(SharedObj.MoverCoordenada)
+		self._x = posicao[0]
+		self._y = posicao[1]
+		msg = {'cmd': MsgSRtoSS.PosicaoAtual, 'x': posicao[0], 'y': posicao[1]}
 		self._envia_msg(msg)
 
 	def atualiza_cacas(self):
-		# TODO: Implementar via rede
 		global shared_obj
-		self.cacas_ordenadas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
+		# self.cacas_ordenadas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
 		self._ordena_cacas()
-
 
 	def _finaliza_tudo(self):
 		global shared_obj
@@ -225,13 +192,23 @@ class Automatico(Thread):
 		direcoes = self._calcula_direcoes(caca)
 		print("DIRECOES : %s" % str(direcoes))
 		while len(direcoes):
+			self._informa_posicao()
+
 			print("Verifica pausa GO")
 			if self._verifica_pausa() == Mover.EXIT:
 				return
+
 			direcao = direcoes.pop(0)
-			self.informa_movimento_ss(direcao)
+			# Limpa evento mover coordenada e seta direcao
+			shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
 			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
 				shared_obj.set(SharedObj.MoverMovimento, direcao)
+
+			# Espera calcular a proxima coordenada
+			shared_obj.wait_event(SharedObj.MoverCoordenadaEvent)
+			# Envia ao SS a coordenada que o robo esta indo
+			prox_coord = shared_obj.get(SharedObj.MoverCoordenada)
+			self._informa_movimento_ss(prox_coord[0], prox_coord[1])
 
 			while shared_obj.get(SharedObj.MoverMovimento) != Mover.PARADO:
 				sleep(1)
@@ -252,28 +229,23 @@ class Automatico(Thread):
 			if shared_obj.get(SharedObj.InterfaceFimJogo):
 				break
 
-			validacao = self._valida_caca()
-			if validacao:
+			ack, pos = self._valida_caca()
+			if ack:
 				print("\nCACA VALIDADA!!\n")
-				
+			elif pos:
+				print("\nCACA INVALIDADA. POSICAO AJUSTADA\n")
+			else:
+				print("\nCACA INVALIDADE E POSICAO NAO AJUSTADA. E AGORA?\nVAMOS ABORTAR !")
+				# TODO: situacao de erro, pensar o que fazer
+				break
 
 			if not len(self.cacas_ordenadas):
 				# FIM DO JOGO
 				break
 
-			# self.atualiza_cacas()
+			self.atualiza_cacas()
 
 		self._finaliza_tudo()
 		print("FINALIZANDO ....")
 		print("HISTORICO: %s" % str(self.historico_mov))
 		print("CACAS ENCONTRADAS: %s" % str(self.cacas_encontradas))
-
-
-
-# if __name__ == "__main__":
-# 	coord_inicial = (0, 0)
-# 	cacas = [(3, 2), (1, 1), (4, 2)]
-# 	cacasAtualizadas = deepcopy(cacas)
-# 	autonomo = Automatico(coord_inicial, cacas)
-# 	autonomo.run()
-

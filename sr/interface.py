@@ -3,8 +3,8 @@ from automatico import *
 # from mover import *
 from mover_test import *
 from shared import *
-from receptor import Receptor
-from transmissor import Transmissor
+from receptor import *
+from transmissor import *
 from time import sleep
 from threading import Thread
 
@@ -19,10 +19,12 @@ class InterfaceSR(Thread):
 	def __init__(self):
 		self.cor = 1					# Valor definido fixo ?
 		self.modo = None
-		self.cacas = None
+		self.cacas = []
 		self.cacador = None
 		self.mac = "00:00:00:00:00:00"
 		#self.identidade = self._get_mac()
+
+		super(InterfaceSR, self).__init__()
 
 
 	def _get_mac(self):
@@ -62,12 +64,16 @@ class InterfaceSR(Thread):
 		else:
 			self.modo_jogo = msg['modo_jogo']
 
-		if 'coord_inicial' not in msg:
+		if 'x' not in msg:
 			ret['erro'] = MsgRoboErro.ParametroNaoInformado
-			ret['param'] = 'coord_inicial'
+			ret['param'] = 'x'
+			return ret
+		elif 'y' not in msg:
+			ret['erro'] = MsgRoboErro.ParametroNaoInformado
+			ret['param'] = 'y'
 			return ret
 		else:
-			self.coord_inicial = msg['coord_inicial']
+			self.coord_inicial = (msg['x'], msg['y'])
 
 		if msg['modo_jogo'] == ModoDeJogo.AUTOMATICO \
 			and 'cacas' not in msg:
@@ -75,16 +81,18 @@ class InterfaceSR(Thread):
 			ret['param'] = 'cacas'
 			return ret
 		else:
-			self.cacas = msg['cacas']
+			self.cacas = []
+			for caca in msg['cacas']:
+				self.cacas.append((caca['x'], caca['y']))
 
-		if modo == ModoDeJogo.MANUAL:
+		if self.modo_jogo == ModoDeJogo.MANUAL:
 			shared_obj.set(SharedObj.ManualMovimento, Mover.PARADO)
-			self.cacador = Manual(coord_inicial)
+			self.cacador = Manual(self.coord_inicial)
 
-		elif modo == ModoDeJogo.AUTOMATICO:
-			self.cacador = Automatico(coord_inicial, cacas)
+		elif self.modo_jogo == ModoDeJogo.AUTOMATICO:
+			cacas = msg['cacas']
+			self.cacador = Automatico(self.coord_inicial, self.cacas)
 
-		self.cacador.start()
 		ret['ack'] = 1
 		return ret
 
@@ -100,7 +108,10 @@ class InterfaceSR(Thread):
 
 	def _atualiza_cacas(self, cacas):
 		global shared_obj
-		shared_obj.set(SharedObj.InterfaceCacasAtualizadas, cacas)
+		new_cacas = []
+		for caca in cacas:
+			new_cacas.append((caca['x'], caca['y']))
+		shared_obj.set(SharedObj.InterfaceCacasAtualizadas, new_cacas)
 
 
 	def _atualiza_pos_adv(self, pos):
@@ -145,6 +156,7 @@ class InterfaceSR(Thread):
 
 
 	def _envia_msg(self, msg):
+		global shared_obj
 		shared_obj.set(SharedObj.TransmitirLock, msg)
 		shared_obj.set_event(SharedObj.TransmitirEvent)
 
@@ -153,7 +165,9 @@ class InterfaceSR(Thread):
 		global shared_obj
 		while True:
 			# Espera alguma mensagem ...
+			print("SR Aguardando mensagem \n")
 			shared_obj.wait_event(SharedObj.InterfaceEvent)
+			print("MENSAGEM RECEBIDA !!")
 
 			shared_obj.acquire(SharedObj.InterfaceEventMsg)
 			msg = shared_obj.get_directly(SharedObj.InterfaceEventMsg)
@@ -170,8 +184,11 @@ class InterfaceSR(Thread):
 				self._envia_msg(resp)
 
 			elif cmd == MsgSStoSR.NovoJogo:
-				resp = self.novo_jogo(msg):
+				resp = self.novo_jogo(msg)
 				self._envia_msg(resp)
+
+			elif cmd == MsgSStoSR.IniciaJogo:
+				self.cacador.start()
 
 			elif cmd == MsgSStoSR.Pausa:
 				self.pause()
@@ -188,8 +205,8 @@ class InterfaceSR(Thread):
 					self.atualiza_mapa()
 
 			elif cmd == MsgSStoSR.ValidacaoCaca:
-				shared_obj.set(InterfaceRespMsg, msg)
-				shared_obj.set_event(InterfaceRespEvent)
+				shared_obj.set(SharedObj.InterfaceRespValidaCacaMsg, msg)
+				shared_obj.set_event(SharedObj.InterfaceRespValidaCacaEvent)
 
 			# Mensagens internas (do proprio SR)
 			elif cmd == MsgSRtoSS.MovendoPara or \
@@ -204,26 +221,23 @@ class InterfaceSR(Thread):
 			shared_obj.release(SharedObj.InterfaceEventMsg)
 			shared_obj.clear_event(SharedObj.InterfaceEvent)
 
+if __name__ == "__main__":
+	t = Transmissor("localhost")
+	t.start()
 
-# if __name__ == "__main__":
-# 	#interface = InterfaceSR()
-# 	transmissor = Transmissor("localhost")
-# 	transmissor.start()
+	r = Receptor("localhost")
+	r.start()
 
-# 	receptor = Receptor("localhost")
-# 	receptor.start()
+	i = InterfaceSR()
+	i.start()
 
-# 	for cmd in range (1000, 1004):
-# 		print("ENTER PARA ENVIAR MENSAGEM AO SS")
-# 		raw_input()
+	for cmd in range (1000, 1004):
+		print("ENTER PARA ENVIAR MENSAGEM AO SS")
+		raw_input()
 
-# 		msg = {'cmd': cmd}
-# 		shared_obj.set(SharedObj.TransmitirLock, msg)
-# 		shared_obj.set_event(SharedObj.TransmitirEvent)
+		msg = {'cmd': cmd}
+		shared_obj.set(SharedObj.TransmitirLock, msg)
+		shared_obj.set_event(SharedObj.TransmitirEvent)
 
-# 		sleep(2)
-
-
-
-
+		sleep(2)
 

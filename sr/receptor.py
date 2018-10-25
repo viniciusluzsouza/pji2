@@ -16,7 +16,8 @@ class Receptor(Thread):
 		self.channel.basic_consume(self.trata_msg_recebida, queue='SS_to_SR', no_ack=True)
 
 	def trata_msg_recebida(self, ch, method, properties, body):
-		print("SR MENSAGEM RECEBIDA !!")
+		global shared_obj
+
 		try:
 			msg = json.loads(body)
 		except:
@@ -25,29 +26,8 @@ class Receptor(Thread):
 		if 'cmd' not in msg:
 			return
 
-		cmd = msg['cmd']
-		if cmd == MsgSStoSR.SolicitaID:
-			# STUB:
-			print("ID 1")
-
-		elif cmd == MsgSStoSR.NovoJogo:
-			print("NovoJogo")
-
-		elif cmd == MsgSStoSR.Pausa:
-			print("PAUSA")
-
-		elif cmd == MsgSStoSR.FimJogo:
-			print("FimJogo")
-
-		elif cmd == MsgSStoSR.Mover:
-			print("mover")
-
-		elif cmd == MsgSStoSR.AtualizaMapa:
-			print("AtualizaMapa")
-
-		else:
-			print("Comando nao reconhecido")
-
+		shared_obj.set(SharedObj.InterfaceEventMsg, msg)
+		shared_obj.set_event(SharedObj.InterfaceEvent)
 
 	def run(self):
 		self.channel.start_consuming()

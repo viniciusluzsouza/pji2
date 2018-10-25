@@ -7,8 +7,11 @@ class MsgSStoSR(object):
 	Pausa = 1101
 	FimJogo = 1102
 	Mover = 1103
+	IniciaJogo = 1104
 
-	AtualizaMapa = 1200,
+	AtualizaMapa = 1200
+
+	ValidacaoCaca = 2000
 
 class ErroMsgSStoSR(object):
 	"""docstring for ErroMsgSStoS"""
@@ -29,7 +32,8 @@ class MsgSRtoSS(object):
 	ValidaCaca = 1002
 	ObstaculoEncontrado = 1003
 
-	NovoJogoConfigurado = 1100
+	SolicitaID_Resp = 2000
+	NovoJogoConfigurado = 2001
 
 class MsgRoboErro(object):
 	"""docstring for ErroMsgSStoS"""

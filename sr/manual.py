@@ -44,11 +44,32 @@ class Manual(Thread):
 			return shared_obj.get(SharedObj.ManualMovimento)
 
 
-	def move(self, direcao):
-		# self._avisa_movimento()
-
+	def _avisa_posicao_atual(self):
 		global shared_obj
+		coord = shared_obj.get(SharedObj.MoverCoordenada)
+		msg = {'cmd': MsgSRtoSS.PosicaoAtual, 'x': coord[0], 'y': coord[1]}
+		shared_obj.set(SharedObj.TransmitirLock, msg)
+		shared_obj.set_event(SharedObj.TransmitirEvent)
+
+	def _avisa_movimento(self, x, y):
+		global shared_obj
+		msg = {'cmd': MsgSRtoSS.MovendoPara, 'x': x, 'y': y}
+		shared_obj.set(SharedObj.TransmitirLock, msg)
+		shared_obj.set_event(SharedObj.TransmitirEvent)
+
+	def move(self, direcao):
+		global shared_obj
+
+		# Limpa evento mover coordenada
+		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
+		# Seta direcao para a thread movimento
 		shared_obj.set(SharedObj.ManualMovimento, direcao)
+		# Espera calcular a proxima coordenada
+		shared_obj.wait_event(SharedObj.MoverCoordenadaEvent)
+		# Envia ao SS a coordenada que o robo esta indo
+		prox_coord = shared_obj.get(SharedObj.MoverCoordenada)
+		self._avisa_movimento(prox_coord[0], prox_coord[1])
+
 		while True:
 			if self._verifica_pausa() == Mover.EXIT:
 				break
@@ -71,6 +92,7 @@ class Manual(Thread):
 	def run(self):
 		global shared_obj
 		while True:
+			self._avisa_posicao_atual()
 			pausa = self._verifica_pausa()
 			if pausa == Mover.EXIT:
 				break

@@ -17,7 +17,7 @@ class ReceptorSR(Thread):
 
 	def trata_msg_recebida(self, ch, method, properties, body):
 		global shared_obj
-		print("SS MENSAGEM RECEBIDA !!")
+		print("SS MENSAGEM RECEBIDA DO SR!!")
 		try:
 			msg = json.loads(body)
 		except:
