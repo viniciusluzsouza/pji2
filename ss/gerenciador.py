@@ -2,10 +2,7 @@ from threading import Thread
 from shared_ss import *
 from mensagens_robo import *
 from mensagens_auditor import *
-
-class ModoDeJogo(object):
-	MANUAL = 1
-	AUTOMATICO = 2
+from interface_usuario import *
 
 class Gerenciador(Thread):
 	"""docstring for Gerenciador"""
@@ -13,6 +10,8 @@ class Gerenciador(Thread):
 	def __init__(self):
 		self.jogo_em_andamento = 0
 		self.modo_jogo = None
+		self.intf_usuario = InterfaceUsuario()
+		self.intf_usuario.start()
 
 		super(Gerenciador, self).__init__()
 
@@ -68,6 +67,10 @@ class Gerenciador(Thread):
 			# Aqui podemos colocar check de posicao!!
 			self.jogo_em_andamento = 1
 			self.modo_jogo = msg['modo_jogo']
+			ui_msg = {'modo_jogo': self.modo_jogo, 'posicao_inicial': (msg['x'], msg['y'])}
+			if 'cacas' in msg: ui_msg['cacas'] = msg['cacas']
+			shared_obj.set(SharedObj.InterfaceUsuarioNovoJogoConfig, ui_msg)
+			shared_obj.set_event(SharedObj.InterfaceUsuarioNovoJogoEvent)
 
 			# Inicia jogo IniciaJogo
 			shared_obj.clear_event(SharedObj.TransmitirSREvent)
@@ -88,66 +91,94 @@ class Gerenciador(Thread):
 			cmd = msg['cmd']
 
 			# Solicitacoes vindas do SA
-			if cmd == MsgSAtoSS.NovoJogo:
-				self.sa_novo_jogo(msg)
+			if '_dir' in msg and msg['_dir'] == 'sa':
+				if cmd == MsgSAtoSS.NovoJogo:
+					self.sa_novo_jogo(msg)
 
-			elif cmd == MsgSAtoSS.Pausa:
-				# Avisa interface usuario
-				# shared_obj.set(SharedObj.InterfaceMsg, msg)
-				# shared_obj.set_event(SharedObj.InterfaceEvent)
+				elif cmd == MsgSAtoSS.SolicitaID:
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
 
-				# Transmite para SR
-				shared_obj.set(SharedObj.TransmitirSRLock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSREvent)
+				elif cmd == MsgSAtoSS.Pausa:
+					# Avisa interface usuario
+					ui_msg = {'cmd': InterfaceUsuario.SA_Pausa}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
 
-			elif cmd == MsgSAtoSS.FimJogo:
-				# Transmite para SR
-				shared_obj.set(SharedObj.TransmitirSRLock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSREvent)
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
 
-			elif cmd == MsgSAtoSS.ValidacaoCaca:
-				# Transmite para SR
-				shared_obj.set(SharedObj.TransmitirSRLock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSREvent)
+				elif cmd == MsgSAtoSS.FimJogo:
+					# Avisa interface usuario
+					shared_obj.set(SharedObj.InterfaceUsuarioFimJogo, 1)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
+
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
+				elif cmd == MsgSAtoSS.ValidacaoCaca:
+					# Avisa interface usuario
+					ui_msg = {'cmd': InterfaceUsuario.SA_ValidacaoCaca}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
+
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
+				else:
+					pass
 
 			# Solicitacoes vindas do SR
-			elif cmd == MsgSRtoSS.MovendoPara:
-				print("MOVENDO PARA")
-				# # Avisa interface usuario
-				# shared_obj.set(SharedObj.InterfaceMsg, msg)
-				# shared_obj.set_event(SharedObj.InterfaceEvent)
+			elif '_dir' in msg and msg['_dir'] == 'sr':
+				if cmd == MsgSRtoSS.SolicitaID_Resp:
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
-				# # Transmite para SA
-				shared_obj.set(SharedObj.TransmitirSALock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSAEvent)
+				elif cmd == MsgSRtoSS.MovendoPara:
+					# Avisa interface usuario
+					ui_msg = {'cmd': InterfaceUsuario.SR_MovendoPara, 'x': msg['x'], 'y': msg['y']}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
 
-			elif cmd == MsgSRtoSS.PosicaoAtual:
-				print("POSICAO ATUAL")
-				# shared_obj.set(SharedObj.InterfaceMsg, msg)
-				# shared_obj.set_event(SharedObj.InterfaceEvent)
-				shared_obj.set(SharedObj.TransmitirSALock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSAEvent)
+					# # Transmite para SA
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
-			elif cmd == MsgSRtoSS.ValidaCaca:
-				print("VALIDA CACA (stub sa valida)")
-				# shared_obj.set(SharedObj.InterfaceMsg, msg)
-				# shared_obj.set_event(SharedObj.InterfaceEvent)
-				shared_obj.set(SharedObj.TransmitirSALock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSAEvent)
+				elif cmd == MsgSRtoSS.PosicaoAtual:
+					ui_msg = {'cmd': InterfaceUsuario.SR_PosicaoAtual, 'x': msg['x'], 'y': msg['y']}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
 
-			elif cmd == MsgSRtoSS.ObstaculoEncontrado:
-				print("OBSTACULO ENCONTRADO")
-				# shared_obj.set(SharedObj.InterfaceMsg, msg)
-				# shared_obj.set_event(SharedObj.InterfaceEvent)
-				shared_obj.set(SharedObj.TransmitirSALock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSAEvent)
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
-			elif cmd == MsgSRtoSS.NovoJogoConfigurado:
-				print("NOVO JOGO CONFIGURADO")
-				# shared_obj.set(SharedObj.InterfaceMsg, msg)
-				# shared_obj.set_event(SharedObj.InterfaceEvent)
-				shared_obj.set(SharedObj.TransmitirSALock, msg)
-				shared_obj.set_event(SharedObj.TransmitirSAEvent)
+				elif cmd == MsgSRtoSS.ValidaCaca:
+					ui_msg = {'cmd': InterfaceUsuario.SR_ValidaCaca}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
+
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
+
+				elif cmd == MsgSRtoSS.ObstaculoEncontrado:
+					ui_msg = {'cmd': InterfaceUsuario.SR_ObstaculoEncontrado}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
+
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
+
+				elif cmd == MsgSRtoSS.NovoJogoConfigurado:
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
+
+				else:
+					pass
 
 			else:
 				pass

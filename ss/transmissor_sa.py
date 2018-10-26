@@ -17,13 +17,14 @@ class TransmissorSA(Thread):
 	def run(self):
 		global shared_obj
 		while True:
-			print("transmitir SA ??")
 			# Espera ate ter uma mensagem a transmitir
 			shared_obj.wait_event(SharedObj.TransmitirSAEvent)
 
 			# Bloqueia enquanto a mensagem e enviada
 			shared_obj.acquire(SharedObj.TransmitirSALock)
 			msg = shared_obj.get_directly(SharedObj.TransmitirSALock)
+
+			if '_dir' in msg: msg.pop('_dir')
 
 			try:
 				msg = json.dumps(msg)

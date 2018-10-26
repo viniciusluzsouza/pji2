@@ -17,6 +17,12 @@ class SharedObj(object):
 	TransmitirSRLock = 40
 	TransmitirSREvent = 41
 
+	InterfaceUsuarioEvent = 50
+	InterfaceUsuarioMsg = 51
+	InterfaceUsuarioFimJogo = 52
+	InterfaceUsuarioNovoJogoEvent = 53
+	InterfaceUsuarioNovoJogoConfig = 54
+
 	def __init__(self,):
 		self.lock_dict = {
 			SharedObj.SolicitaGerente: Event(),
@@ -30,7 +36,13 @@ class SharedObj(object):
 			SharedObj.TransmitirSAEvent: Event(),
 
 			SharedObj.TransmitirSRLock: Lock(),
-			SharedObj.TransmitirSREvent: Event()
+			SharedObj.TransmitirSREvent: Event(),
+
+			SharedObj.InterfaceUsuarioMsg: Lock(),
+			SharedObj.InterfaceUsuarioEvent: Event(),
+			SharedObj.InterfaceUsuarioFimJogo: Lock(),
+			SharedObj.InterfaceUsuarioNovoJogoEvent: Event(),
+			SharedObj.InterfaceUsuarioNovoJogoConfig: Lock(),
 		}
 		
 		self.variables_dict = {
@@ -42,10 +54,15 @@ class SharedObj(object):
 			SharedObj.TransmitirSALock: {},
 
 			SharedObj.TransmitirSRLock: {},
+			SharedObj.InterfaceUsuarioMsg: {},
+			SharedObj.InterfaceUsuarioFimJogo: 0,
+			SharedObj.InterfaceUsuarioNovoJogoConfig: {}
 		}
 
 		self.acceptable = [ SharedObj.SolicitaGerente, SharedObj.MensagemGerente, SharedObj.RespostaGerente, \
-		SharedObj.TransmitirSALock, SharedObj.TransmitirSAEvent, SharedObj.TransmitirSRLock, SharedObj.TransmitirSREvent ]
+		SharedObj.TransmitirSALock, SharedObj.TransmitirSAEvent, SharedObj.TransmitirSRLock, SharedObj.TransmitirSREvent, \
+		SharedObj.InterfaceUsuarioMsg, SharedObj.InterfaceUsuarioEvent, SharedObj.InterfaceUsuarioFimJogo, \
+		SharedObj.InterfaceUsuarioNovoJogoEvent, SharedObj.InterfaceUsuarioNovoJogoConfig]
 
 	def _acceptable(self, var):
 		if var not in self.acceptable:
@@ -94,7 +111,7 @@ class SharedObj(object):
 		return ret
 
 	def get_directly(self, var):
-		return self.variables_dict[var]
+		return deepcopy(self.variables_dict[var])
 
 	def acquire(self, var):
 		if not self._acceptable(var):

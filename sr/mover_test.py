@@ -159,4 +159,3 @@ class Mover(Thread):
 				break
 
 			sleep(0.1)
-

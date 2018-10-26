@@ -85,6 +85,7 @@ class Manual(Thread):
 
 			sleep(0.1)
 
+		self._avisa_posicao_atual()
 		if shared_obj.get(SharedObj.ManualMovimento) != Mover.EXIT:
 			shared_obj.set(SharedObj.ManualMovimento, Mover.PARADO)
 
@@ -92,7 +93,6 @@ class Manual(Thread):
 	def run(self):
 		global shared_obj
 		while True:
-			self._avisa_posicao_atual()
 			pausa = self._verifica_pausa()
 			if pausa == Mover.EXIT:
 				break

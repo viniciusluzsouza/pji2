@@ -17,11 +17,12 @@ class ReceptorSA(Thread):
 
 	def trata_msg_recebida(self, ch, method, properties, body):
 		global shared_obj
-		print("SS MENSAGEM RECEBIDA DO SA!!")
 		try:
 			msg = json.loads(body)
 		except:
 			return
+
+		msg['_dir'] = 'sa'
 
 		shared_obj.set(SharedObj.MensagemGerente, msg)
 		shared_obj.set_event(SharedObj.SolicitaGerente)

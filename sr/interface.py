@@ -53,6 +53,21 @@ class InterfaceSR(Thread):
 			shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 
 
+	def _limpa_var_globais(self):
+		global shared_obj
+		shared_obj.set(SharedObj.MoverMovimento, Mover.PARADO)
+		shared_obj.set(SharedObj.MoverHistorico, [])
+		shared_obj.set(SharedObj.MoverCoordenada, self.coord_inicial)
+		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
+		shared_obj.set(SharedObj.ManualMovimento, Mover.PARADO)
+		shared_obj.set(SharedObj.AutomaticoValidarCaca, 0)
+		shared_obj.set(SharedObj.InterfaceRespValidaCacaMsg, {})
+		shared_obj.clear_event(SharedObj.InterfaceRespValidaCacaEvent)
+		shared_obj.set(SharedObj.InterfaceFimJogo, 0)
+		shared_obj.set(SharedObj.InterfaceCacasAtualizadas, [])
+		shared_obj.set(SharedObj.InterfacePauseContinua, 0)
+
+
 	def novo_jogo(self, msg):
 		global shared_obj
 
@@ -75,15 +90,17 @@ class InterfaceSR(Thread):
 		else:
 			self.coord_inicial = (msg['x'], msg['y'])
 
-		if msg['modo_jogo'] == ModoDeJogo.AUTOMATICO \
-			and 'cacas' not in msg:
-			ret['erro'] = MsgRoboErro.ParametroNaoInformado
-			ret['param'] = 'cacas'
-			return ret
-		else:
-			self.cacas = []
-			for caca in msg['cacas']:
-				self.cacas.append((caca['x'], caca['y']))
+		if msg['modo_jogo'] == ModoDeJogo.AUTOMATICO:
+			if 'cacas' not in msg:
+				ret['erro'] = MsgRoboErro.ParametroNaoInformado
+				ret['param'] = 'cacas'
+				return ret
+			else:
+				self.cacas = []
+				for caca in msg['cacas']:
+					self.cacas.append((caca['x'], caca['y']))
+
+		self._limpa_var_globais()
 
 		if self.modo_jogo == ModoDeJogo.MANUAL:
 			shared_obj.set(SharedObj.ManualMovimento, Mover.PARADO)

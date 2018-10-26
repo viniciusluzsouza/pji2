@@ -112,7 +112,7 @@ class SharedObj(object):
 		return ret
 
 	def get_directly(self, var):
-		return self.variables_dict[var]
+		return deepcopy(self.variables_dict[var])
 
 	def acquire(self, var):
 		if not self._acceptable(var):

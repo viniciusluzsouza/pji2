@@ -55,9 +55,9 @@ if __name__ == '__main__':
 			cacas = []
 			cacas.append({'x': 5, 'y': 3})
 			cacas.append({'x': 1, 'y': 2})
-			cacas.append({'x': 3, 'y': 4})
-			cacas.append({'x': 6, 'y': 1})
-			cacas.append({'x': 2, 'y': 1})
+			# cacas.append({'x': 3, 'y': 4})
+			# cacas.append({'x': 6, 'y': 1})
+			# cacas.append({'x': 2, 'y': 1})
 			msg = {'cmd': 1100, 'modo_jogo': 2, 'x': 0, 'y': 0, 'cacas': cacas}
 		elif op == 3:
 			msg = {'cmd': 1101}
@@ -73,7 +73,7 @@ if __name__ == '__main__':
 		elif op == 6:
 			msg = {'cmd': 1200, 'cacas': []}
 		elif op == 7:
-			msg = {'cmd': 1100}
+			msg = {'cmd': 1000}
 		elif op == 0:
 			break
 

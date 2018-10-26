@@ -107,20 +107,24 @@ class Automatico(Thread):
 
 	def _verifica_pausa(self):
 		global shared_obj
+		print("verificando pausa ...")
 		if shared_obj.get(SharedObj.InterfacePauseContinua):
+			print("entrei verifica pausa ...")
 			# Pausa setada, paramos e aguardamos algum evento ...
 			shared_obj.set(SharedObj.MoverMovimento, Mover.PAUSA)
-			
+			print("entrei pausa setada ...")
 			while True:
 				sleep(0.5)
 				# Aguardamos duas coisas: continue ou fim do jogo
 				if not shared_obj.get(SharedObj.InterfacePauseContinua):
 					# Fim da pausa
+					print("fim pausa ...")
 					shared_obj.set(SharedObj.MoverMovimento, Mover.CONTINUA)
 					return Mover.CONTINUA
 
 				if shared_obj.get(SharedObj.InterfaceFimJogo):
 					# Fim do jogo
+					print("opa ")
 					shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 					return Mover.EXIT
 
@@ -179,7 +183,6 @@ class Automatico(Thread):
 		shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 		shared_obj.set(SharedObj.InterfaceFimJogo, 1)
 
-
 	def _go(self):
 		global shared_obj
 		if not len(self.cacas_ordenadas):
@@ -196,18 +199,26 @@ class Automatico(Thread):
 
 			print("Verifica pausa GO")
 			if self._verifica_pausa() == Mover.EXIT:
+				print("cabou")
 				return
 
+			print("seguiu")
 			direcao = direcoes.pop(0)
 			# Limpa evento mover coordenada e seta direcao
 			shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
-			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
+			mover_mov = shared_obj.get(SharedObj.MoverMovimento)
+			print("mover_mov: %s" % str(mover_mov))
+			if mover_mov == Mover.PARADO:
+				print("seguiu 2")
 				shared_obj.set(SharedObj.MoverMovimento, direcao)
 
 			# Espera calcular a proxima coordenada
+			print("wait")
 			shared_obj.wait_event(SharedObj.MoverCoordenadaEvent)
 			# Envia ao SS a coordenada que o robo esta indo
+			print("poxima")
 			prox_coord = shared_obj.get(SharedObj.MoverCoordenada)
+			print("informa mov")
 			self._informa_movimento_ss(prox_coord[0], prox_coord[1])
 
 			while shared_obj.get(SharedObj.MoverMovimento) != Mover.PARADO:

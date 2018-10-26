@@ -24,6 +24,8 @@ class TransmissorSR(Thread):
 			shared_obj.acquire(SharedObj.TransmitirSRLock)
 			msg = shared_obj.get_directly(SharedObj.TransmitirSRLock)
 
+			if '_dir' in msg: msg.pop('_dir')
+
 			try:
 				msg = json.dumps(msg)
 				self.channel.basic_publish(exchange='', routing_key='SS_to_SR', body=msg)
