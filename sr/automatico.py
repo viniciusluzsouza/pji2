@@ -175,22 +175,31 @@ class Automatico(Thread):
 
 	def atualiza_cacas(self):
 		global shared_obj
-		# self.cacas_ordenadas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
+		self.cacas_ordenadas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
+		eu = (self._x, self._y)
+		if eu in self.cacas_ordenadas:
+			self.cacas_ordenadas.remove(eu)
+			shared_obj.set(SharedObj.InterfaceCacasAtualizadas, self.cacas_ordenadas)
+
 		self._ordena_cacas()
+		print("novas cacas: %s" % str(self.cacas_ordenadas))
 
 	def _finaliza_tudo(self):
 		global shared_obj
 		shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 		shared_obj.set(SharedObj.InterfaceFimJogo, 1)
 
+		print("FINALIZANDO ....")
+		print("HISTORICO: %s" % str(self.historico_mov))
+		print("CACAS ENCONTRADAS: %s" % str(self.cacas_encontradas))
+
 	def _go(self):
 		global shared_obj
 		if not len(self.cacas_ordenadas):
 			print("CACAS VAZIAS")
-			self._finaliza_tudo()
 			return
 
-		caca = self.cacas_ordenadas.pop(0)
+		caca = self.cacas_ordenadas[0]
 		print("PROXIMA CACA: %s" % str(caca))
 		direcoes = self._calcula_direcoes(caca)
 		print("DIRECOES : %s" % str(direcoes))
@@ -221,7 +230,11 @@ class Automatico(Thread):
 			print("informa mov")
 			self._informa_movimento_ss(prox_coord[0], prox_coord[1])
 
-			while shared_obj.get(SharedObj.MoverMovimento) != Mover.PARADO:
+			print("espera movimento finalizar ... ")
+			while True:
+				end = shared_obj.get(SharedObj.MoverMovimento)
+				if end == Mover.PARADO: break
+				elif end == Mover.EXIT: return
 				sleep(1)
 
 			self.historico_mov.append(direcao)
@@ -257,6 +270,3 @@ class Automatico(Thread):
 			self.atualiza_cacas()
 
 		self._finaliza_tudo()
-		print("FINALIZANDO ....")
-		print("HISTORICO: %s" % str(self.historico_mov))
-		print("CACAS ENCONTRADAS: %s" % str(self.cacas_encontradas))

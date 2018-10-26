@@ -2,10 +2,12 @@
 class MsgSAtoSS(object):
 	"""ENUM de mensagens SS para SR"""
 	SolicitaID = 1000
+	SolicitaHistorico = 1001
 
 	NovoJogo = 1100
 	Pausa = 1101
-	FimJogo = 1102
+	Continua = 1102
+	FimJogo = 1103
 
 	AtualizaMapa = 1200
 
@@ -19,6 +21,8 @@ class MsgSStoSA(object):
 	ValidaCaca = 1002
 	ObstaculoEncontrado = 1003
 
+	SolicitaID_Resp = 2000
+	SolicitaHistorico_RESP = 2002
 
 class MsgAuditorErro(object):
 	"""docstring for ErroMsgSStoS"""

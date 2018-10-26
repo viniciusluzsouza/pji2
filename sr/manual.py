@@ -63,7 +63,7 @@ class Manual(Thread):
 		# Limpa evento mover coordenada
 		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
 		# Seta direcao para a thread movimento
-		shared_obj.set(SharedObj.ManualMovimento, direcao)
+		shared_obj.set(SharedObj.MoverMovimento, direcao)
 		# Espera calcular a proxima coordenada
 		shared_obj.wait_event(SharedObj.MoverCoordenadaEvent)
 		# Envia ao SS a coordenada que o robo esta indo
@@ -108,6 +108,6 @@ class Manual(Thread):
 
 				self.move(mov)
 
-			sleep(0.1)
+			sleep(1)
 
 

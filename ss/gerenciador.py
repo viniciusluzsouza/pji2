@@ -69,6 +69,9 @@ class Gerenciador(Thread):
 			self.modo_jogo = msg['modo_jogo']
 			ui_msg = {'modo_jogo': self.modo_jogo, 'posicao_inicial': (msg['x'], msg['y'])}
 			if 'cacas' in msg: ui_msg['cacas'] = msg['cacas']
+			
+			# Avisa interface usuario
+			shared_obj.set(SharedObj.InterfaceUsuarioFimJogo, 0)
 			shared_obj.set(SharedObj.InterfaceUsuarioNovoJogoConfig, ui_msg)
 			shared_obj.set_event(SharedObj.InterfaceUsuarioNovoJogoEvent)
 
@@ -110,6 +113,16 @@ class Gerenciador(Thread):
 					shared_obj.set(SharedObj.TransmitirSRLock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSREvent)
 
+				elif cmd == MsgSAtoSS.Continua:
+					# Avisa interface usuario
+					ui_msg = {'cmd': InterfaceUsuario.SA_Continua}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
+
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
 				elif cmd == MsgSAtoSS.FimJogo:
 					# Avisa interface usuario
 					shared_obj.set(SharedObj.InterfaceUsuarioFimJogo, 1)
@@ -129,13 +142,28 @@ class Gerenciador(Thread):
 					shared_obj.set(SharedObj.TransmitirSRLock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSREvent)
 
+				elif cmd == MsgSAtoSS.AtualizaMapa:
+					# Avisa interface usuario
+					ui_msg = {'cmd': InterfaceUsuario.SA_AtualizaMapa}
+					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
+
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
+				elif cmd == MsgSAtoSS.SolicitaHistorico:
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
 				else:
 					pass
 
 			# Solicitacoes vindas do SR
 			elif '_dir' in msg and msg['_dir'] == 'sr':
 				if cmd == MsgSRtoSS.SolicitaID_Resp:
-					# Transmite para SR
+					# Transmite para SA
 					shared_obj.set(SharedObj.TransmitirSALock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
@@ -145,7 +173,7 @@ class Gerenciador(Thread):
 					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
 					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
 
-					# # Transmite para SA
+					# Transmite para SA
 					shared_obj.set(SharedObj.TransmitirSALock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
@@ -173,15 +201,35 @@ class Gerenciador(Thread):
 					shared_obj.set(SharedObj.TransmitirSALock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
-				elif cmd == MsgSRtoSS.NovoJogoConfigurado:
+				elif cmd == MsgSRtoSS.SolicitaHistorico_RESP:
+					# Transmite para SA
 					shared_obj.set(SharedObj.TransmitirSALock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
 				else:
 					pass
 
-			else:
-				pass
+			# Solicitacoes vindas do proprio ss
+			elif '_dir' in msg and msg['_dir'] == 'ss':
+				if cmd == MsgSStoSR.Mover:
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
+				elif cmd == MsgSStoSA.ValidaCaca:
+					# Transmite para SA
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
+
+				elif cmd == MsgSStoSR.Pausa \
+					or MsgSStoSR.Continua:
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
+					# Transmite para SA
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
 			shared_obj.release(SharedObj.MensagemGerente)
 			shared_obj.clear_event(SharedObj.SolicitaGerente)

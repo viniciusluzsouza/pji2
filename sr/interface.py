@@ -124,6 +124,7 @@ class InterfaceSR(Thread):
 
 
 	def _atualiza_cacas(self, cacas):
+		print("ATUALIZANDO CACAS !!!")
 		global shared_obj
 		new_cacas = []
 		for caca in cacas:
@@ -150,7 +151,10 @@ class InterfaceSR(Thread):
 
 	def get_historico(self):
 		global shared_obj
-		return shared_obj.get(SharedObj.MoverHistorico)
+		historico = shared_obj.get(SharedObj.MoverHistorico)
+		resp = {'cmd': MsgSRtoSS.SolicitaHistorico_RESP, 'historico': historico}
+		self._envia_msg(resp)
+
 
 	def pause(self):
 		global shared_obj
@@ -205,25 +209,32 @@ class InterfaceSR(Thread):
 				self._envia_msg(resp)
 
 			elif cmd == MsgSStoSR.IniciaJogo:
+				print("INICIANDO GAME !!")
 				self.cacador.start()
 
 			elif cmd == MsgSStoSR.Pausa:
 				self.pause()
 
+			elif cmd == MsgSStoSR.Continua:
+				self.continua()
+
 			elif cmd == MsgSStoSR.FimJogo:
 				self.fim_jogo()
 
 			elif cmd == MsgSStoSR.Mover:
-				if self.modo_jogo is ModoDeJogo.MANUAL:
-					self.mover_manual()
+				if 'direcao' in msg and \
+					self.modo_jogo is ModoDeJogo.MANUAL:
+					self.mover_manual(msg['direcao'])
 
 			elif cmd == MsgSStoSR.AtualizaMapa:
-				if self.modo_jogo is ModoDeJogo.AUTOMATICO:
-					self.atualiza_mapa()
+				self.atualiza_mapa(msg)
 
 			elif cmd == MsgSStoSR.ValidacaoCaca:
 				shared_obj.set(SharedObj.InterfaceRespValidaCacaMsg, msg)
 				shared_obj.set_event(SharedObj.InterfaceRespValidaCacaEvent)
+
+			elif cmd == MsgSStoSR.SolicitaHistorico:
+				self.get_historico()
 
 			# Mensagens internas (do proprio SR)
 			elif cmd == MsgSRtoSS.MovendoPara or \
@@ -248,13 +259,13 @@ if __name__ == "__main__":
 	i = InterfaceSR()
 	i.start()
 
-	for cmd in range (1000, 1004):
-		print("ENTER PARA ENVIAR MENSAGEM AO SS")
-		raw_input()
+	# for cmd in range (1000, 1004):
+	# 	print("ENTER PARA ENVIAR MENSAGEM AO SS")
+	# 	input()
 
-		msg = {'cmd': cmd}
-		shared_obj.set(SharedObj.TransmitirLock, msg)
-		shared_obj.set_event(SharedObj.TransmitirEvent)
+	# 	msg = {'cmd': cmd}
+	# 	shared_obj.set(SharedObj.TransmitirLock, msg)
+	# 	shared_obj.set_event(SharedObj.TransmitirEvent)
 
-		sleep(2)
+	# 	sleep(2)
 

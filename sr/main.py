@@ -12,13 +12,13 @@ if __name__ == "__main__":
 	i = InterfaceSR()
 	i.start()
 
-	for cmd in range (1000, 1004):
-		print("ENTER PARA ENVIAR MENSAGEM AO SS")
-		raw_input()
+	# for cmd in range (1000, 1004):
+	# 	print("ENTER PARA ENVIAR MENSAGEM AO SS")
+	# 	input()
 
-		msg = {'cmd': cmd}
-		shared_obj.set(SharedObj.TransmitirLock, msg)
-		shared_obj.set_event(SharedObj.TransmitirEvent)
+	# 	msg = {'cmd': cmd}
+	# 	shared_obj.set(SharedObj.TransmitirLock, msg)
+	# 	shared_obj.set_event(SharedObj.TransmitirEvent)
 
-		sleep(2)
+	# 	sleep(2)
 

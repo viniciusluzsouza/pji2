@@ -2,6 +2,7 @@
 class MsgSStoSR(object):
 	"""ENUM de mensagens SS para SR"""
 	SolicitaID = 1000
+	SolicitaHistorico = 1001
 
 	NovoJogo = 1100
 	Pausa = 1101
@@ -35,6 +36,7 @@ class MsgSRtoSS(object):
 
 	SolicitaID_Resp = 2000
 	NovoJogoConfigurado = 2001
+	SolicitaHistorico_RESP = 2002
 
 class MsgRoboErro(object):
 	"""docstring for ErroMsgSStoS"""
