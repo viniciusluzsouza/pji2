@@ -110,6 +110,7 @@ class Automatico(Thread):
 		if shared_obj.get(SharedObj.InterfacePauseContinua):
 			print("[AUTOMATICO]: Pausa Setada")
 			# Pausa setada, paramos e aguardamos algum evento ...
+			self.historico_mov.append(Mover.PAUSA)
 			shared_obj.set(SharedObj.MoverMovimento, Mover.PAUSA)
 			while True:
 				sleep(0.5)
@@ -117,6 +118,7 @@ class Automatico(Thread):
 				if not shared_obj.get(SharedObj.InterfacePauseContinua):
 					# Fim da pausa
 					print("[AUTOMATICO]: Fim da pausa")
+					self.historico_mov.append(Mover.CONTINUA)
 					shared_obj.set(SharedObj.MoverMovimento, Mover.CONTINUA)
 					return Mover.CONTINUA
 
@@ -188,6 +190,10 @@ class Automatico(Thread):
 		global shared_obj
 		shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 		shared_obj.set(SharedObj.InterfaceFimJogo, 1)
+		pos_atual = (self._x, self._y)
+		if pos_atual in self.cacas_encontradas:
+			self.cacas_encontradas.remove(pos_atual)
+
 
 	def _go(self):
 		global shared_obj
