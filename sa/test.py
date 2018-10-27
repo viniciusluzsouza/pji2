@@ -49,7 +49,7 @@ if __name__ == '__main__':
 		print("8) Solicita Historico")
 		print("\n0) Sair")
 
-		op = int(input("Opcao: "))
+		op = input("Opcao: ")
 		try:
 			op = int(op)
 			if op == 1:
