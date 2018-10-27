@@ -24,6 +24,7 @@ class Manual(Thread):
 	def _verifica_pausa(self):
 		global shared_obj
 		if shared_obj.get(SharedObj.InterfacePauseContinua) == 1:
+			print("[MANUAL]: Entrou em pausa")
 			# Pausa setada, paramos e aguardamos algum evento ...
 			shared_obj.set(SharedObj.MoverMovimento, Mover.PAUSA)
 
@@ -32,11 +33,13 @@ class Manual(Thread):
 				# Aguardamos duas coisas: continue ou fim do jogo
 				if not shared_obj.get(SharedObj.InterfacePauseContinua):
 					# Fim da pausa
+					print("[MANUAL]: Fim da pausa")
 					shared_obj.set(SharedObj.MoverMovimento, Mover.CONTINUA)
 					return Mover.CONTINUA
 
 				if shared_obj.get(SharedObj.InterfaceFimJogo):
 					# Fim do jogo
+					print("[MANUAL]: Fim do jogo")
 					shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 					return Mover.EXIT
 
@@ -46,6 +49,7 @@ class Manual(Thread):
 
 	def _avisa_posicao_atual(self):
 		global shared_obj
+		print("[MANUAL]: Informa posicao SS")
 		coord = shared_obj.get(SharedObj.MoverCoordenada)
 		msg = {'cmd': MsgSRtoSS.PosicaoAtual, 'x': coord[0], 'y': coord[1]}
 		shared_obj.set(SharedObj.TransmitirLock, msg)
@@ -53,6 +57,7 @@ class Manual(Thread):
 
 	def _avisa_movimento(self, x, y):
 		global shared_obj
+		print("[MANUAL]: Informa movimento SS")
 		msg = {'cmd': MsgSRtoSS.MovendoPara, 'x': x, 'y': y}
 		shared_obj.set(SharedObj.TransmitirLock, msg)
 		shared_obj.set_event(SharedObj.TransmitirEvent)
@@ -60,6 +65,7 @@ class Manual(Thread):
 	def move(self, direcao):
 		global shared_obj
 
+		print("[MANUAL]: Movendo para %s" % str(direcao))
 		# Limpa evento mover coordenada
 		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
 		# Seta direcao para a thread movimento
@@ -81,6 +87,7 @@ class Manual(Thread):
 
 			# Mutex movimento e do mover (aguarda finalizar o movimento)
 			if shared_obj.get(SharedObj.MoverMovimento) == Mover.PARADO:
+				print("[MANUAL]: Movimento finalizado")
 				break
 
 			sleep(0.1)
@@ -92,6 +99,7 @@ class Manual(Thread):
 
 	def run(self):
 		global shared_obj
+		print("[MANUAL]: Aguardando movimentos")
 		while True:
 			pausa = self._verifica_pausa()
 			if pausa == Mover.EXIT:
@@ -110,4 +118,5 @@ class Manual(Thread):
 
 			sleep(1)
 
+		print("[MANUAL]: Fim do jogo")
 

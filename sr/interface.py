@@ -124,7 +124,6 @@ class InterfaceSR(Thread):
 
 
 	def _atualiza_cacas(self, cacas):
-		print("ATUALIZANDO CACAS !!!")
 		global shared_obj
 		new_cacas = []
 		for caca in cacas:
@@ -158,7 +157,6 @@ class InterfaceSR(Thread):
 
 	def pause(self):
 		global shared_obj
-		print("setando pausa")
 		shared_obj.set(SharedObj.InterfacePauseContinua, 1)
 
 	def continua(self):
@@ -168,7 +166,6 @@ class InterfaceSR(Thread):
 		if not shared_obj.get(SharedObj.InterfacePauseContinua):
 			return
 
-		print("continuando")
 		shared_obj.set(SharedObj.InterfacePauseContinua, 0)
 
 	def stop(self):
@@ -186,9 +183,7 @@ class InterfaceSR(Thread):
 		global shared_obj
 		while True:
 			# Espera alguma mensagem ...
-			print("SR Aguardando mensagem \n")
 			shared_obj.wait_event(SharedObj.InterfaceEvent)
-			print("MENSAGEM RECEBIDA !!")
 
 			shared_obj.acquire(SharedObj.InterfaceEventMsg)
 			msg = shared_obj.get_directly(SharedObj.InterfaceEventMsg)
@@ -199,41 +194,50 @@ class InterfaceSR(Thread):
 
 			# Mensagens vindas do SS:
 			if cmd == MsgSStoSR.SolicitaID:
+				print("[RECEBIDO]: SolicitaID")
 				resp = {'cmd': MsgSRtoSS.SolicitaID_Resp}
 				resp['cor'] = self.cor
 				resp['mac'] = self.mac
 				self._envia_msg(resp)
 
 			elif cmd == MsgSStoSR.NovoJogo:
+				print("[RECEBIDO]: NovoJogo")
 				resp = self.novo_jogo(msg)
 				self._envia_msg(resp)
 
 			elif cmd == MsgSStoSR.IniciaJogo:
-				print("INICIANDO GAME !!")
+				print("[RECEBIDO]: IniciaJogo")
 				self.cacador.start()
 
 			elif cmd == MsgSStoSR.Pausa:
+				print("[RECEBIDO]: Pausa")
 				self.pause()
 
 			elif cmd == MsgSStoSR.Continua:
+				print("[RECEBIDO]: Continua")
 				self.continua()
 
 			elif cmd == MsgSStoSR.FimJogo:
+				print("[RECEBIDO]: FimJogo")
 				self.fim_jogo()
 
 			elif cmd == MsgSStoSR.Mover:
+				print("[RECEBIDO]: Mover")
 				if 'direcao' in msg and \
 					self.modo_jogo is ModoDeJogo.MANUAL:
 					self.mover_manual(msg['direcao'])
 
 			elif cmd == MsgSStoSR.AtualizaMapa:
+				print("[RECEBIDO]: AtualizaMapa")
 				self.atualiza_mapa(msg)
 
 			elif cmd == MsgSStoSR.ValidacaoCaca:
+				print("[RECEBIDO]: ValidacaoCaca")
 				shared_obj.set(SharedObj.InterfaceRespValidaCacaMsg, msg)
 				shared_obj.set_event(SharedObj.InterfaceRespValidaCacaEvent)
 
 			elif cmd == MsgSStoSR.SolicitaHistorico:
+				print("[RECEBIDO]: SolicitaHistorico")
 				self.get_historico()
 
 			# Mensagens internas (do proprio SR)
@@ -250,10 +254,10 @@ class InterfaceSR(Thread):
 			shared_obj.clear_event(SharedObj.InterfaceEvent)
 
 if __name__ == "__main__":
-	t = Transmissor("localhost")
+	t = Transmissor("192.168.0.31")
 	t.start()
 
-	r = Receptor("localhost")
+	r = Receptor("192.168.0.31")
 	r.start()
 
 	i = InterfaceSR()

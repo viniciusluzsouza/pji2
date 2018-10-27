@@ -23,6 +23,7 @@ class SharedObj(object):
 	InterfaceUsuarioNovoJogoEvent = 53
 	InterfaceUsuarioNovoJogoConfig = 54
 	InterfaceUsuarioNovoComando = 55
+	InterfaceUsuarioPausaSA = 56
 
 	def __init__(self,):
 		self.lock_dict = {
@@ -45,6 +46,7 @@ class SharedObj(object):
 			SharedObj.InterfaceUsuarioNovoJogoEvent: Event(),
 			SharedObj.InterfaceUsuarioNovoJogoConfig: Lock(),
 			SharedObj.InterfaceUsuarioNovoComando: Event(),
+			SharedObj.InterfaceUsuarioPausaSA: Lock(),
 		}
 		
 		self.variables_dict = {
@@ -58,13 +60,15 @@ class SharedObj(object):
 			SharedObj.TransmitirSRLock: {},
 			SharedObj.InterfaceUsuarioMsg: {},
 			SharedObj.InterfaceUsuarioFimJogo: 0,
-			SharedObj.InterfaceUsuarioNovoJogoConfig: {}
+			SharedObj.InterfaceUsuarioNovoJogoConfig: {},
+			SharedObj.InterfaceUsuarioPausaSA: 0,
 		}
 
 		self.acceptable = [ SharedObj.SolicitaGerente, SharedObj.MensagemGerente, SharedObj.RespostaGerente, \
 		SharedObj.TransmitirSALock, SharedObj.TransmitirSAEvent, SharedObj.TransmitirSRLock, SharedObj.TransmitirSREvent, \
 		SharedObj.InterfaceUsuarioMsg, SharedObj.InterfaceUsuarioEvent, SharedObj.InterfaceUsuarioFimJogo, \
-		SharedObj.InterfaceUsuarioNovoJogoEvent, SharedObj.InterfaceUsuarioNovoJogoConfig, SharedObj.InterfaceUsuarioNovoComando]
+		SharedObj.InterfaceUsuarioNovoJogoEvent, SharedObj.InterfaceUsuarioNovoJogoConfig, SharedObj.InterfaceUsuarioNovoComando, \
+		SharedObj.InterfaceUsuarioPausaSA]
 
 	def _acceptable(self, var):
 		if var not in self.acceptable:

@@ -88,7 +88,6 @@ class Mover(Thread):
 	def _verifica_pausa(self):
 		global shared_obj
 		if shared_obj.get(SharedObj.MoverMovimento) == Mover.PAUSA:
-			print("EM PAUSA !! Aguardando algo ...")
 			shared_obj.append_list(SharedObj.MoverHistorico, Mover.PAUSA)
 			# self.stop()
 			while True:
@@ -127,17 +126,17 @@ class Mover(Thread):
 		calc_coord = self._calc_next_coord(direcao)
 		self._next_coord = calc_coord
 		shared_obj.set(SharedObj.MoverCoordenada, calc_coord)
-		print("\nindo para: %s" % str(calc_coord))
+		print("[MOVER]: Indo para: %s" % str(calc_coord))
 
 		sleep(2)
 		if self._verifica_pausa() == Mover.EXIT:
 			return
 
 		sleep(2)
-		print("moved!")
+		print("[MOVER]: Chegamos")
 		self._coord_x = calc_coord[0]
 		self._coord_y = calc_coord[1]
-		print("estamos em (%d, %d)" % (self._coord_x, self._coord_y))
+		print("[MOVER]: Coord Atual: (%d, %d)" % (self._coord_x, self._coord_y))
 		self._finalizar_movimento()
 
 		#Salvar os movimentos no historico
@@ -147,6 +146,7 @@ class Mover(Thread):
 
 	def run(self):
 		global shared_obj
+		print("[MOVER]: Aguardando movimentos")
 		while True:
 			if self._verifica_pausa() == Mover.EXIT:
 				break
@@ -159,3 +159,5 @@ class Mover(Thread):
 				break
 
 			sleep(0.1)
+
+		print("[MOVER]: Fim do jogo")

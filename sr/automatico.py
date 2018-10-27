@@ -107,24 +107,22 @@ class Automatico(Thread):
 
 	def _verifica_pausa(self):
 		global shared_obj
-		print("verificando pausa ...")
 		if shared_obj.get(SharedObj.InterfacePauseContinua):
-			print("entrei verifica pausa ...")
+			print("[AUTOMATICO]: Pausa Setada")
 			# Pausa setada, paramos e aguardamos algum evento ...
 			shared_obj.set(SharedObj.MoverMovimento, Mover.PAUSA)
-			print("entrei pausa setada ...")
 			while True:
 				sleep(0.5)
 				# Aguardamos duas coisas: continue ou fim do jogo
 				if not shared_obj.get(SharedObj.InterfacePauseContinua):
 					# Fim da pausa
-					print("fim pausa ...")
+					print("[AUTOMATICO]: Fim da pausa")
 					shared_obj.set(SharedObj.MoverMovimento, Mover.CONTINUA)
 					return Mover.CONTINUA
 
 				if shared_obj.get(SharedObj.InterfaceFimJogo):
 					# Fim do jogo
-					print("opa ")
+					print("[AUTOMATICO]: Fim do jogo")
 					shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 					return Mover.EXIT
 
@@ -162,11 +160,13 @@ class Automatico(Thread):
 
 	def _informa_movimento_ss(self, x, y):
 		global shared_obj
+		print("[AUTOMATICO]: Informa movimento SS")
 		msg = {'cmd': MsgSRtoSS.MovendoPara, 'x': x, 'y': y}
 		self._envia_msg(msg)
 
 	def _informa_posicao(self):
 		global shared_obj
+		print("[AUTOMATICO]: Informa posicao SS")
 		posicao = shared_obj.get(SharedObj.MoverCoordenada)
 		self._x = posicao[0]
 		self._y = posicao[1]
@@ -182,70 +182,58 @@ class Automatico(Thread):
 			shared_obj.set(SharedObj.InterfaceCacasAtualizadas, self.cacas_ordenadas)
 
 		self._ordena_cacas()
-		print("novas cacas: %s" % str(self.cacas_ordenadas))
+		print("[AUTOMATICO]: Novas cacas: %s" % str(self.cacas_ordenadas))
 
 	def _finaliza_tudo(self):
 		global shared_obj
 		shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 		shared_obj.set(SharedObj.InterfaceFimJogo, 1)
 
-		print("FINALIZANDO ....")
-		print("HISTORICO: %s" % str(self.historico_mov))
-		print("CACAS ENCONTRADAS: %s" % str(self.cacas_encontradas))
-
 	def _go(self):
 		global shared_obj
 		if not len(self.cacas_ordenadas):
-			print("CACAS VAZIAS")
 			return
 
 		caca = self.cacas_ordenadas[0]
-		print("PROXIMA CACA: %s" % str(caca))
+		print("[AUTOMATICO]: Proxima caca: %s" % str(caca))
 		direcoes = self._calcula_direcoes(caca)
-		print("DIRECOES : %s" % str(direcoes))
+		print("[AUTOMATICO]: Direcoes : %s" % str(direcoes))
 		while len(direcoes):
 			self._informa_posicao()
 
-			print("Verifica pausa GO")
 			if self._verifica_pausa() == Mover.EXIT:
-				print("cabou")
 				return
 
-			print("seguiu")
 			direcao = direcoes.pop(0)
 			# Limpa evento mover coordenada e seta direcao
+			print("[AUTOMATICO]: Inicia movimento")
 			shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
 			mover_mov = shared_obj.get(SharedObj.MoverMovimento)
-			print("mover_mov: %s" % str(mover_mov))
 			if mover_mov == Mover.PARADO:
-				print("seguiu 2")
 				shared_obj.set(SharedObj.MoverMovimento, direcao)
 
 			# Espera calcular a proxima coordenada
-			print("wait")
 			shared_obj.wait_event(SharedObj.MoverCoordenadaEvent)
 			# Envia ao SS a coordenada que o robo esta indo
-			print("poxima")
 			prox_coord = shared_obj.get(SharedObj.MoverCoordenada)
-			print("informa mov")
 			self._informa_movimento_ss(prox_coord[0], prox_coord[1])
 
-			print("espera movimento finalizar ... ")
 			while True:
 				end = shared_obj.get(SharedObj.MoverMovimento)
 				if end == Mover.PARADO: break
 				elif end == Mover.EXIT: return
 				sleep(1)
 
+			print("[AUTOMATICO]: Movimento finalizado")
 			self.historico_mov.append(direcao)
 
 
 	def run(self):
 		global shared_obj
+		print("[AUTOMATICO]: Iniciando buscas")
 		# Primeira vez so ordena as cacas e sai cavando
 		self._ordena_cacas()
 		while True:
-			print("Verifica pausa RUN")
 			if self._verifica_pausa() == Mover.EXIT:
 				break
 
@@ -255,11 +243,11 @@ class Automatico(Thread):
 
 			ack, pos = self._valida_caca()
 			if ack:
-				print("\nCACA VALIDADA!!\n")
+				print("\n[AUTOMATICO]: CACA VALIDADA!!\n")
 			elif pos:
-				print("\nCACA INVALIDADA. POSICAO AJUSTADA\n")
+				print("\n[AUTOMATICO]: CACA INVALIDADA. POSICAO AJUSTADA\n")
 			else:
-				print("\nCACA INVALIDADE E POSICAO NAO AJUSTADA. E AGORA?\nVAMOS ABORTAR !")
+				print("\n[AUTOMATICO]: CACA INVALIDADE E POSICAO NAO AJUSTADA. E AGORA?\nVAMOS ABORTAR !")
 				# TODO: situacao de erro, pensar o que fazer
 				break
 
@@ -270,3 +258,6 @@ class Automatico(Thread):
 			self.atualiza_cacas()
 
 		self._finaliza_tudo()
+		print("[AUTOMATICO]: Finalizando ....")
+		print("[AUTOMATICO]: Historico: %s" % str(self.historico_mov))
+		print("[AUTOMATICO]: Cacas encontradas: %s" % str(self.cacas_encontradas))

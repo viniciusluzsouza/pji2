@@ -9,8 +9,8 @@ class Transmissor(Thread):
 
 	def __init__(self, host):
 		super(Transmissor, self).__init__()
-
-		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host)))
+		credenciais = pika.PlainCredentials('guest', 'guest')
+		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host), credentials=credenciais))
 		self.channel = self.connection.channel()
 		self.channel.queue_declare(queue='SR_to_SS')
 
@@ -19,14 +19,11 @@ class Transmissor(Thread):
 		global shared_obj
 		while True:
 			# Espera ate ter uma mensagem a transmitir
-			print("aguardando para transmitir ....")
 			shared_obj.wait_event(SharedObj.TransmitirEvent)
 
-			print("ok, irei transmitir")
 			# Bloqueia enquanto a mensagem e enviada
 			shared_obj.acquire(SharedObj.TransmitirLock)
 			msg = shared_obj.get_directly(SharedObj.TransmitirLock)
-			print("msg: %s" % str(msg))
 
 			try:
 				msg = json.dumps(msg)
