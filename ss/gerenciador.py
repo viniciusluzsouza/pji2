@@ -157,6 +157,16 @@ class Gerenciador(Thread):
 					shared_obj.set(SharedObj.TransmitirSRLock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSREvent)
 
+				elif cmd == MsgSAtoSS.CadastraRobo:
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
+				elif cmd == MsgSAtoSS.SolicitaStatus:
+					# Transmite para SR
+					shared_obj.set(SharedObj.TransmitirSRLock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSREvent)
+
 				else:
 					pass
 
@@ -202,6 +212,11 @@ class Gerenciador(Thread):
 					shared_obj.set_event(SharedObj.TransmitirSAEvent)
 
 				elif cmd == MsgSRtoSS.SolicitaHistorico_RESP:
+					# Transmite para SA
+					shared_obj.set(SharedObj.TransmitirSALock, msg)
+					shared_obj.set_event(SharedObj.TransmitirSAEvent)
+
+				elif cmd == MsgSRtoSS.SolicitaStatus_RESP:
 					# Transmite para SA
 					shared_obj.set(SharedObj.TransmitirSALock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSAEvent)

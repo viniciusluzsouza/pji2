@@ -47,6 +47,8 @@ if __name__ == '__main__':
 		print("6) Atualiza mapa")
 		print("7) Solicita ID")
 		print("8) Solicita Historico")
+		print("9) Cadastra Robo")
+		print("10) Solicita Status")
 		print("\n0) Sair")
 
 		op = input("Opcao: ")
@@ -76,9 +78,15 @@ if __name__ == '__main__':
 				cacas.append({'x': 2, 'y': 1})
 				msg = {'cmd': 1200, 'cacas': cacas}
 			elif op == 7:
-				msg = {'cmd': 1000}
-			elif op == 8:
 				msg = {'cmd': 1001}
+			elif op == 8:
+				msg = {'cmd': 1002}
+			elif op == 9:
+				cor = input("Digite a cor: ")
+				nome = input("Digite o nome: ")
+				msg = {'cmd': 1000, 'cor': cor, 'nome': nome}
+			elif op == 10:
+				msg = {'cmd': 1003}
 			elif op == 0:
 				break
 		except:

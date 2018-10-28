@@ -7,6 +7,7 @@ from receptor import *
 from transmissor import *
 from time import sleep
 from threading import Thread
+import json
 
 class ModoDeJogo(object):
 	MANUAL = 1
@@ -17,11 +18,11 @@ class InterfaceSR(Thread):
 	"""World interface for SR"""
 
 	def __init__(self):
-		self.cor = 1					# Valor definido fixo ?
 		self.modo = None
 		self.cacas = []
 		self.cacador = None
 		self.mac = "00:00:00:00:00:00"
+		self._ler_cadastro()
 		#self.identidade = self._get_mac()
 
 		super(InterfaceSR, self).__init__()
@@ -35,9 +36,15 @@ class InterfaceSR(Thread):
 		return mac
 
 
-	def get_identidade(self):
-		return "RG"
-
+	def _ler_cadastro(self):
+		try:
+			with open('cadastro.cfg') as f:
+				cadastro = json.load(f)
+				self.cor = cadastro['cor']
+				self.nome = cadastro['nome']
+		except:
+			self.cor = 0
+			self.nome = "Grupo3"
 
 	def get_cor(self):
 		return self.cor
@@ -135,6 +142,18 @@ class InterfaceSR(Thread):
 		# TODO
 		pass
 
+	def _atualiza_cadastro(self):
+		cadastro = {'cor': self.cor, 'nome': self.nome}
+		with open('cadastro.cfg', 'w') as f:
+			json.dump(cadastro, f)
+
+	def cadastra_robo(self, msg):
+		if 'cor' not in msg:
+			return
+
+		self.cor = msg['cor']
+		self.nome = msg['nome'] if 'nome' in msg else 'Grupo3'
+		self._atualiza_cadastro()
 
 	def atualiza_mapa(self, msg):
 		if 'cacas' in msg:
@@ -181,6 +200,9 @@ class InterfaceSR(Thread):
 
 	def run(self):
 		global shared_obj
+		print("##### ROBO INICIALIZADO #####")
+		print("Nome: %s | Cor: %s\n" % (str(self.nome), str(self.cor)))
+
 		while True:
 			# Espera alguma mensagem ...
 			shared_obj.wait_event(SharedObj.InterfaceEvent)
@@ -197,6 +219,7 @@ class InterfaceSR(Thread):
 				print("[RECEBIDO]: SolicitaID")
 				resp = {'cmd': MsgSRtoSS.SolicitaID_Resp}
 				resp['cor'] = self.cor
+				resp['nome'] = self.nome
 				resp['mac'] = self.mac
 				self._envia_msg(resp)
 
@@ -240,6 +263,15 @@ class InterfaceSR(Thread):
 				print("[RECEBIDO]: SolicitaHistorico")
 				self.get_historico()
 
+			elif cmd == MsgSStoSR.CadastraRobo:
+				print("[RECEBIDO]: CadastraRobo")
+				self.cadastra_robo(msg)
+
+			elif cmd == MsgSStoSR.SolicitaStatus:
+				print("[RECEBIDO]: SolicitaStatus")
+				resp = {'cmd': MsgSRtoSS.SolicitaStatus_RESP}
+				self._envia_msg(resp)
+
 			# Mensagens internas (do proprio SR)
 			elif cmd == MsgSRtoSS.MovendoPara or \
 				cmd == MsgSRtoSS.PosicaoAtual or \
@@ -254,10 +286,10 @@ class InterfaceSR(Thread):
 			shared_obj.clear_event(SharedObj.InterfaceEvent)
 
 if __name__ == "__main__":
-	t = Transmissor("192.168.0.31")
+	t = Transmissor("localhost")
 	t.start()
 
-	r = Receptor("192.168.0.31")
+	r = Receptor("localhost")
 	r.start()
 
 	i = InterfaceSR()
