@@ -1,4 +1,3 @@
-import zmq
 import pika
 import json
 from threading import Thread, Event
@@ -9,7 +8,7 @@ class Transmissor(Thread):
 
 	def __init__(self, host):
 		super(Transmissor, self).__init__()
-		credenciais = pika.PlainCredentials('guest', 'guest')
+		credenciais = pika.PlainCredentials('robot', 'maker')
 		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host), credentials=credenciais))
 		self.channel = self.connection.channel()
 		self.channel.queue_declare(queue='SR_to_SS')
@@ -17,6 +16,7 @@ class Transmissor(Thread):
 
 	def run(self):
 		global shared_obj
+
 		while True:
 			# Espera ate ter uma mensagem a transmitir
 			shared_obj.wait_event(SharedObj.TransmitirEvent)
@@ -28,8 +28,8 @@ class Transmissor(Thread):
 			try:
 				msg = json.dumps(msg)
 				self.channel.basic_publish(exchange='', routing_key='SR_to_SS', body=msg)
-			except:
-				print("excecao")
+			except Exception as e:
+				print(str(e))
 				pass
 
 			shared_obj.clear_event(SharedObj.TransmitirEvent)

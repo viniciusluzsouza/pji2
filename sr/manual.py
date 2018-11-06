@@ -1,5 +1,5 @@
-from mover_test import *
-# from mover import *
+# from mover_test import *
+from mover import *
 from interface import *
 from threading import Thread, Lock
 from time import sleep
@@ -25,16 +25,14 @@ class Manual(Thread):
 		global shared_obj
 		if shared_obj.get(SharedObj.InterfacePauseContinua) == 1:
 			print("[MANUAL]: Entrou em pausa")
-			# Pausa setada, paramos e aguardamos algum evento ...
-			shared_obj.set(SharedObj.MoverMovimento, Mover.PAUSA)
 
+			# Pausa setada, paramos e aguardamos algum evento ...
 			while True:
 				sleep(0.5)
 				# Aguardamos duas coisas: continue ou fim do jogo
 				if not shared_obj.get(SharedObj.InterfacePauseContinua):
 					# Fim da pausa
 					print("[MANUAL]: Fim da pausa")
-					shared_obj.set(SharedObj.MoverMovimento, Mover.CONTINUA)
 					return Mover.CONTINUA
 
 				if shared_obj.get(SharedObj.InterfaceFimJogo):
@@ -77,9 +75,6 @@ class Manual(Thread):
 		self._avisa_movimento(prox_coord[0], prox_coord[1])
 
 		while True:
-			if self._verifica_pausa() == Mover.EXIT:
-				break
-
 			# Mutex manual vem da interface
 			mut_manual = shared_obj.get(SharedObj.ManualMovimento)
 			if mut_manual == Mover.EXIT:
@@ -104,9 +99,6 @@ class Manual(Thread):
 			pausa = self._verifica_pausa()
 			if pausa == Mover.EXIT:
 				break
-			elif pausa == Mover.CONTINUA:
-				shared_obj.set(SharedObj.MoverMovimento, Mover.PARADO)
-				shared_obj.set(SharedObj.ManualMovimento, Mover.PARADO)
 
 			mov = shared_obj.get(SharedObj.ManualMovimento)
 			if mov != Mover.PARADO:

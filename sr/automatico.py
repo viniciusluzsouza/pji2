@@ -1,5 +1,5 @@
-from mover_test import *
-# from mover import *
+# from mover_test import *
+from mover import *
 from interface import *
 from threading import Thread, Lock
 from shared import *
@@ -111,7 +111,6 @@ class Automatico(Thread):
 			print("[AUTOMATICO]: Pausa Setada")
 			# Pausa setada, paramos e aguardamos algum evento ...
 			self.historico_mov.append(Mover.PAUSA)
-			shared_obj.set(SharedObj.MoverMovimento, Mover.PAUSA)
 			while True:
 				sleep(0.5)
 				# Aguardamos duas coisas: continue ou fim do jogo
@@ -119,7 +118,6 @@ class Automatico(Thread):
 					# Fim da pausa
 					print("[AUTOMATICO]: Fim da pausa")
 					self.historico_mov.append(Mover.CONTINUA)
-					shared_obj.set(SharedObj.MoverMovimento, Mover.CONTINUA)
 					return Mover.CONTINUA
 
 				if shared_obj.get(SharedObj.InterfaceFimJogo):
@@ -207,9 +205,6 @@ class Automatico(Thread):
 		while len(direcoes):
 			self._informa_posicao()
 
-			if self._verifica_pausa() == Mover.EXIT:
-				return
-
 			direcao = direcoes.pop(0)
 			# Limpa evento mover coordenada e seta direcao
 			print("[AUTOMATICO]: Inicia movimento")
@@ -233,6 +228,10 @@ class Automatico(Thread):
 			print("[AUTOMATICO]: Movimento finalizado")
 			self.historico_mov.append(direcao)
 
+			if self._verifica_pausa() == Mover.EXIT:
+				return
+			if shared_obj.get(SharedObj.InterfaceFimJogo):
+				return
 
 	def run(self):
 		global shared_obj

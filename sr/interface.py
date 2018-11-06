@@ -1,7 +1,7 @@
 from manual import *
 from automatico import *
-# from mover import *
-from mover_test import *
+from mover import *
+# from mover_test import *
 from shared import *
 from receptor import *
 from transmissor import *
@@ -57,7 +57,6 @@ class InterfaceSR(Thread):
 		else:
 			shared_obj.set(SharedObj.InterfaceFimJogo, 1)
 			shared_obj.set(SharedObj.ManualMovimento, Mover.EXIT)
-			shared_obj.set(SharedObj.MoverMovimento, Mover.EXIT)
 
 
 	def _limpa_var_globais(self):
@@ -286,10 +285,10 @@ class InterfaceSR(Thread):
 			shared_obj.clear_event(SharedObj.InterfaceEvent)
 
 if __name__ == "__main__":
-	t = Transmissor("localhost")
+	t = Transmissor("172.20.10.5")
 	t.start()
 
-	r = Receptor("localhost")
+	r = Receptor("172.20.10.5")
 	r.start()
 
 	i = InterfaceSR()

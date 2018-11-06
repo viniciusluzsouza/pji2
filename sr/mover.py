@@ -83,7 +83,7 @@ class Mover(Thread):
 
 
 	def calibra_andando(self):
-		"""Calibra já andando pra frente"""
+		"""Calibra ja andando pra frente"""
 		self.sensor_luminosidade.mode = 'COL-REFLECT'
 		self.motor_esquerda.run_direct(duty_cycle_sp=30)
 		self.motor_direita.run_direct(duty_cycle_sp=30)

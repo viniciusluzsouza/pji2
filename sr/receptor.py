@@ -10,7 +10,8 @@ class Receptor(Thread):
 
 	def __init__(self, host):
 		super(Receptor, self).__init__()
-		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host)))
+		credenciais = pika.PlainCredentials('robot', 'maker')
+		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host), credentials=credenciais))
 		self.channel = self.connection.channel()
 		self.channel.queue_declare(queue='SS_to_SR')
 		self.channel.basic_consume(self.trata_msg_recebida, queue='SS_to_SR', no_ack=True)
@@ -19,8 +20,9 @@ class Receptor(Thread):
 		global shared_obj
 
 		try:
-			msg = json.loads(body)
-		except:
+			msg = json.loads(body.decode())
+		except Exception as e:
+			print(str(e))
 			return
 
 		if 'cmd' not in msg:
