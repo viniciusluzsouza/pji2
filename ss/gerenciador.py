@@ -89,6 +89,7 @@ class Gerenciador(Thread):
 			shared_obj.acquire(SharedObj.MensagemGerente)
 			msg = shared_obj.get_directly(SharedObj.MensagemGerente)
 			if 'cmd' not in msg:
+				shared_obj.clear_event(SharedObj.SolicitaGerente)
 				continue
 
 			cmd = msg['cmd']
