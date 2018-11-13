@@ -1,80 +1,175 @@
 from threading import Thread, Lock, Event
 from mensagens_auditor import *
+from gerente_db import GerenteDB
 
 solicita_gerente = Event()
 gerente_msg_lock = Lock()
 gerente_msg = {}
 
-class Gerenciador(Thread):
+class Gerenciador():
 	"""Gerenciador do SA. Trata mensagens vindas de qualquer lugar."""
 
 	def __init__(self):
+		# Inicializa o banco de dados
+		self.gerente_db = GerenteDB()
+		self.gerente_db.cria_db()
+
 		super(Gerenciador, self).__init__()
 
-	def run(self):
-		global solicita_gerente, gerente_msg_lock, gerente_msg
 
-		while True:
-			# Espera alguma mensagem ...
-			solicita_gerente.wait()
+	def get_cadastros(self):
+		return self.gerente_db.get_cadastros()
 
-			with gerente_msg_lock:
-				msg = gerente_msg
 
-				if 'cmd' not in msg:
-					solicita_gerente.clear()
-					continue
+	def cadastra_robo(self, nome, cor, mac):
+		if (self.gerente_db.cadastra_robo(nome, cor, mac) < 0):
+			print("ERRO NO CADASTRO")
 
-				cmd = msg['cmd']
 
-				# Solicitacoes vindas do SS
-				if '_dir' in msg and msg['_dir'] == 'sa':
-					if cmd == MsgSStoSA.MovendoPara:
-						# Avisa interface usuario
+	def salva_historico(self, robo_a, cacas_a, robo_b, cacas_b):
+		self.gerente_db.salva_partida(robo_a, cacas_a, robo_b, cacas_b)
 
-					elif cmd == MsgSStoSA.PosicaoAtual:
-						# Avisa interface usuario
 
-					elif cmd == MsgSStoSA.ValidaCaca:
-						# Avisa interface usuario
+	def get_historico(self):
+		return self.gerente_db.get_partidas()
 
-					elif cmd == MsgSStoSA.ObstaculoEncontrado:
-						# Avisa interface usuario
 
-					elif cmd == MsgSStoSA.SolicitaID_Resp:
-						# Avisa interface usuario
+	def init_thread_rede(self):
+		def gerencia_msg_rede():
+			global solicita_gerente, gerente_msg_lock, gerente_msg
 
-					elif cmd == MsgSStoSA.SolicitaHistorico_RESP:
-						# Avisa interface usuario
+			while True:
+				# Espera alguma mensagem ...
+				solicita_gerente.wait()
 
-					elif cmd == MsgSStoSA.SolicitaStatus_RESP:
-						# Avisa interface usuario
+				with gerente_msg_lock:
+					msg = gerente_msg
 
-					else:
-						# Comando nao identificado, nao faz nada ...
+					if 'cmd' not in msg:
+						solicita_gerente.clear()
+						continue
+
+					cmd = msg['cmd']
+
+					if '_dir' in msg and msg['_dir'] == 'local' and cmd == -1:
+						break
+
+					# Solicitacoes vindas do SS
+					if '_dir' in msg and msg['_dir'] == 'ss':
+						if cmd == MsgSStoSA.MovendoPara:
+							# Avisa interface usuario
+							print("OK, funcionando ...")
+							pass
+
+						elif cmd == MsgSStoSA.PosicaoAtual:
+							# Avisa interface usuario
+							pass
+
+						elif cmd == MsgSStoSA.ValidaCaca:
+							# Avisa interface usuario
+							pass
+
+						elif cmd == MsgSStoSA.ObstaculoEncontrado:
+							# Avisa interface usuario
+							pass
+
+						elif cmd == MsgSStoSA.SolicitaID_Resp:
+							# Avisa interface usuario
+							pass
+
+						elif cmd == MsgSStoSA.SolicitaHistorico_RESP:
+							# Avisa interface usuario
+							pass
+
+						elif cmd == MsgSStoSA.SolicitaStatus_RESP:
+							# Avisa interface usuario
+							pass
+
+						else:
+							# Comando nao identificado, nao faz nada ...
+							pass
+
+					# Solicitacoes vindas da interface de usuario
+					elif '_dir' in msg and msg['_dir'] == 'ui':
+						'''
+						Sugestao: as classes interface usuario e principal
+						podem se comunicar com o gerente da mesma forma que
+						o SS se comunica com o SA (atraves de mensagens JSON).
+						Isto deve facilitar a implementacao, pois ja temos
+						o cenario montado, basta criar os IF's ...
+	
+						if cmd == MsgUItoGerente.NovoJogo:
+							# Transmite para SS
+	
+						elif ...
+						'''
+
+					# Solicitacoes vindas da classe principal
+					elif '_dir' in msg and msg['_dir'] == 'pr':
+						# Aqui podemos fazer da mesma forma ...
 						pass
 
-				# Solicitacoes vindas da interface de usuario
-				elif '_dir' in msg and msg['_dir'] == 'ui':
-					'''
-					Sugestao: as classes interface usuario e principal
-					podem se comunicar com o gerente da mesma forma que
-					o SS se comunica com o SA (atraves de mensagens JSON).
-					Isto deve facilitar a implementacao, pois ja temos
-					o cenario montado, basta criar os IF's ...
+					solicita_gerente.clear()
 
-					if cmd == MsgUItoGerente.NovoJogo:
-						# Transmite para SS
-
-					elif ...
-					'''
-
-				# Solicitacoes vindas da classe principal
-				elif '_dir' in msg and msg['_dir'] == 'pr':
-					# Aqui podemos fazer da mesma forma ...
-
-				solicita_gerente.clear()
+		t = Thread(target=gerencia_msg_rede)
+		t.start()
+		return
 
 
+'''
+### TESTE:
+if __name__ == '__main__':
+	print("Inicializando ...")
+	gerente = Gerenciador()
+	gerente.init_thread_rede()
 
+	for i in range(1, 3):
+		print("\nCadastrando %dº robo" % i)
+		try:
+			nome = input("Nome: ")
+			cor = int(input("Cor (int): "))
+			mac = input("MAC: ")
+		except:
+			print("Invalido")
+			exit()
 
+		gerente.cadastra_robo(nome, cor, mac)
+
+	print("\nSalvando historico")
+	try:
+		roboA = input("Primeiro robo: ")
+		roboB = input("Segundo robo: ")
+		cacasA = int(input("Cacas encontradas primeiro robo (int): "))
+		cacasB = int(input("Cacas encontradas segundo robo (int): "))
+	except:
+		print("Invalido")
+		exit()
+
+	gerente.salva_historico(roboA, cacasA, roboB, cacasB)
+
+	print("\nExibindo cadastros ... ")
+	cadastros = gerente.get_cadastros()
+	for cadastro in cadastros:
+		print(cadastro)
+
+	print("\nExibindo historico ... ")
+	partidas = gerente.get_historico()
+	for partida in partidas:
+		print(partida)
+
+	import time
+	time.sleep(2)
+	print("\nMandando msg por thread ... ")
+
+	with gerente_msg_lock:
+		gerente_msg = {'cmd': MsgSStoSA.MovendoPara, '_dir': 'ss'}
+		solicita_gerente.set()
+
+	time.sleep(2)
+	print("\nEnviando msg para finalizar!!")
+	with gerente_msg_lock:
+		gerente_msg = {'cmd': -1, '_dir': 'local'}
+		solicita_gerente.set()
+
+	print("FIM")
+'''
