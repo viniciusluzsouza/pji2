@@ -45,10 +45,11 @@ class GerenteDB(object):
 		conn = sqlite3.connect(self._nome_db)
 		cursor = conn.cursor()
 
-		cursor.execute(("SELECT id FROM %s WHERE nome=?" % self._cadastros_tb), (nome))
+		cursor.execute(("SELECT id FROM %s WHERE nome=?" % self._cadastros_tb), (nome,))
 		if len(cursor.fetchall()):
 			# Cadastro ja existe
 			return -1
+
 
 		cursor.execute(("""
 		INSERT INTO %s (nome, cor, mac)

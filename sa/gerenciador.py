@@ -1,18 +1,28 @@
 from threading import Thread, Lock, Event
 from mensagens_auditor import *
 from gerente_db import GerenteDB
-
-solicita_gerente = Event()
-gerente_msg_lock = Lock()
-gerente_msg = {}
+from transmissor import *
+from receptor import *
+from copy import deepcopy
+import compartilhados
 
 class Gerenciador():
 	"""Gerenciador do SA. Trata mensagens vindas de qualquer lugar."""
 
 	def __init__(self):
+		compartilhados.init()
+
 		# Inicializa o banco de dados
 		self.gerente_db = GerenteDB()
 		self.gerente_db.cria_db()
+
+		# Inicializa transmissor
+		self.transmissor = Transmissor("localhost")
+		self.transmissor.start()
+
+		# Inicializa receptor
+		self.receptor = Receptor("localhost")
+		self.receptor.start()
 
 		super(Gerenciador, self).__init__()
 
@@ -22,8 +32,7 @@ class Gerenciador():
 
 
 	def cadastra_robo(self, nome, cor, mac):
-		if (self.gerente_db.cadastra_robo(nome, cor, mac) < 0):
-			print("ERRO NO CADASTRO")
+		return self.gerente_db.cadastra_robo(nome, cor, mac)
 
 
 	def salva_historico(self, robo_a, cacas_a, robo_b, cacas_b):
@@ -36,14 +45,13 @@ class Gerenciador():
 
 	def init_thread_rede(self):
 		def gerencia_msg_rede():
-			global solicita_gerente, gerente_msg_lock, gerente_msg
 
 			while True:
 				# Espera alguma mensagem ...
-				solicita_gerente.wait()
+				compartilhados.solicita_gerente.wait()
 
-				with gerente_msg_lock:
-					msg = gerente_msg
+				with compartilhados.gerente_msg_lock:
+					msg = deepcopy(compartilhados.gerente_msg)
 
 					if 'cmd' not in msg:
 						solicita_gerente.clear()
@@ -56,6 +64,8 @@ class Gerenciador():
 
 					# Solicitacoes vindas do SS
 					if '_dir' in msg and msg['_dir'] == 'ss':
+						print("Recebi msg do SS: ")
+						print("%s \n" % str(msg))
 						if cmd == MsgSStoSA.MovendoPara:
 							# Avisa interface usuario
 							print("OK, funcionando ...")
@@ -109,7 +119,13 @@ class Gerenciador():
 						# Aqui podemos fazer da mesma forma ...
 						pass
 
-					solicita_gerente.clear()
+					elif '_dir' in msg and msg['_dir'] == 'teste':
+						# No teste, so envia para baixo ...
+						with compartilhados.transmitir_msg_lock:
+							compartilhados.transmitir_msg = msg
+							compartilhados.transmitir_event.set()
+
+					compartilhados.solicita_gerente.clear()
 
 		t = Thread(target=gerencia_msg_rede)
 		t.start()

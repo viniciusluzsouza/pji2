@@ -1,97 +1,111 @@
-from threading import Thread
+from threading import Thread, Event, Lock
 from time import sleep
-import pika
 import json
-
-def receptor():
-	connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-	channel = connection.channel()
-	channel.queue_declare(queue='SS_to_SA')
-
-	def responde(msg):
-		print("respondendo: %s" % str(msg))
-		connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-		channel = connection.channel()
-		channel.queue_declare(queue='SA_to_SS')
-		channel.basic_publish(exchange='', routing_key='SA_to_SS', body=json.dumps(msg))
-		connection.close()
-
-	def callback(ch, method, properties, body):
-		print("SA Recebeu: %s" % str(body))
-		try:
-			msg = json.loads(body)
-			if msg['cmd'] == 1002:
-				responde({'cmd': 2000, 'ack': 1})	# msg valida caca
-		except:
-			pass
-
-	channel.basic_consume(callback, queue='SS_to_SA', no_ack=True)
-	channel.start_consuming()
-
+from gerenciador import *
+from mensagens_auditor import MsgSAtoSS
+from copy import deepcopy
+import random
+import compartilhados
 
 if __name__ == '__main__':
-	consumidor = Thread(target=receptor)
-	consumidor.start()
-
-	connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-	channel = connection.channel()
-	channel.queue_declare(queue='SA_to_SS')
+	gerente = Gerenciador()
+	gerente.init_thread_rede()
 
 	while True:
-		print(" ### Escolha a opcao de mensagem:")
-		print("1) Novo jogo manual")
-		print("2) Novo jogo automatico")
-		print("3) Pause")
-		print("4) Continua")
-		print("5) Fim do Jogo")
-		print("6) Atualiza mapa")
-		print("7) Solicita ID")
-		print("8) Solicita Historico")
-		print("9) Cadastra Robo")
-		print("10) Solicita Status")
-		print("\n0) Sair")
+		print("""
+ ### Escolha a opcao de mensagem:
+1) Cadastra robo
+2) Solicita ID
+3) Solicita Historico
+4) Solicita Status
+5) Novo Jogo
+6) Pausa
+7) Continua
+8) Fim Jogo
+9) Atualiza Mapa
+0) EXIT
+		""")
+
 
 		op = input("Opcao: ")
+		msg = {"_dir": "teste"}
 		try:
 			op = int(op)
 			if op == 1:
-				msg = {'cmd': 1100, 'modo_jogo': 1, 'x': 0, 'y': 0}
+				# Cadastra robo
+				nome = input("Nome: ")
+				cor = int(input("Cor (int):"))
+				mac = input("MAC: ")
+				gerente.cadastra_robo(nome, cor, mac)
+				msg.update({"cmd": MsgSAtoSS.CadastraRobo, "nome": nome, "cor": cor, "mac": mac})
+
 			elif op == 2:
-				cacas = []
-				cacas.append({'x': 5, 'y': 3})
-				cacas.append({'x': 1, 'y': 2})
-				cacas.append({'x': 3, 'y': 4})
-				cacas.append({'x': 6, 'y': 1})
-				cacas.append({'x': 2, 'y': 1})
-				msg = {'cmd': 1100, 'modo_jogo': 2, 'x': 0, 'y': 0, 'cacas': cacas}
+				# Solicita ID
+				msg.update({"cmd": MsgSAtoSS.SolicitaID})
+
 			elif op == 3:
-				msg = {'cmd': 1101}
+				# Solicita historico
+				msg.update({"cmd": MsgSAtoSS.SolicitaHistorico})
+
 			elif op == 4:
-				msg = {'cmd': 1102}
+				# Solicita historico
+				msg.update({"cmd": MsgSAtoSS.SolicitaStatus})
+
 			elif op == 5:
-				msg = {'cmd': 1103}
-			elif op == 6:
+				modo = int(input("Digite 1 para manual e 2 para automatico: "))
+				x = int(input("Posicao inicial X: "))
+				y = int(input("Posicao inicial Y: "))
 				cacas = []
-				# cacas.append({'x': 5, 'y': 3})
-				cacas.append({'x': 1, 'y': 2})
-				cacas.append({'x': 3, 'y': 4})
-				cacas.append({'x': 2, 'y': 1})
-				msg = {'cmd': 1200, 'cacas': cacas}
+				if int(modo) == 2:
+					# Sorteia cacas
+					for i in range(0, 5):
+						caca = {}
+						caca["x"] = random.randint(0, 6)
+						caca["y"] = random.randint(0, 6)
+						cacas.append(caca)
+
+					print("Cacas: %s" % str(cacas))
+
+				msg.update({"cmd": MsgSAtoSS.NovoJogo, "modo_jogo": modo, \
+							"x": x, "y": y, "cacas": cacas})
+
+			elif op == 6:
+				# Pausa
+				msg.update({"cmd": MsgSAtoSS.Pausa})
+
 			elif op == 7:
-				msg = {'cmd': 1001}
+				# Continua
+				msg.update({"cmd": MsgSAtoSS.Continua})
+
 			elif op == 8:
-				msg = {'cmd': 1002}
+				# Fim Jogo
+				msg.update({"cmd": MsgSAtoSS.FimJogo})
+
 			elif op == 9:
-				cor = input("Digite a cor: ")
-				nome = input("Digite o nome: ")
-				msg = {'cmd': 1000, 'cor': cor, 'nome': nome}
-			elif op == 10:
-				msg = {'cmd': 1003}
+				print("Apenas uma caca ...")
+				x = int(input("Caca (X): "))
+				y = int(input("Caca (Y): "))
+				adv_x = random.randint(0, 6)
+				adv_y = random.randint(0, 6)
+				print("Posicao Fake adversario: (%d,%d)" % (adv_x, adv_y))
+				cacas = [{"x": x, "y": y}]
+				adv = {"x": adv_x, "y": adv_y}
+				msg.update({"cmd": MsgSAtoSS.AtualizaMapa, "cacas": cacas, "posicao_adversario": adv})
+
 			elif op == 0:
-				break
+				msg = {"cmd": -1, "_dir": "local"}
+
+			else:
+				continue
+
 		except:
 			print("Opcao invalida")
 			continue
 
-		channel.basic_publish(exchange='', routing_key='SA_to_SS', body=json.dumps(msg))
+		with compartilhados.gerente_msg_lock:
+			compartilhados.gerente_msg = deepcopy(msg)
+			compartilhados.solicita_gerente.set()
+
 		sleep(2)
+
+		if op == 0: break

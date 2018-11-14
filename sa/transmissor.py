@@ -1,10 +1,7 @@
 import pika
 import json
-from threading import Thread, Condition, Lock
-
-transmitir_event = Event()
-transmitir_msg_lock = Lock()
-transmitir_msg = {}
+from threading import Thread, Event, Lock
+import compartilhados
 
 class Transmissor(Thread):
 	"""Classe transmissora de mensagens do sistema auditor."""
@@ -18,16 +15,17 @@ class Transmissor(Thread):
 
 
 	def run(self):
-		global transmitir_event, transmitir_msg_lock, transmitir_msg
 		while True:
 			# Espera ate ter uma mensagem a transmitir
-			transmitir_event.wait()
+			compartilhados.transmitir_event.wait()
 
 			# Bloqueia enquanto a mensagem e enviada
-			with transmitir_msg_lock:
-				msg = transmitir_msg
+			with compartilhados.transmitir_msg_lock:
+				msg = compartilhados.transmitir_msg
 
 				if '_dir' in msg: msg.pop('_dir')
+
+				print("Enviando: %s" % str(msg))
 
 				try:
 					msg = json.dumps(msg)
@@ -35,6 +33,6 @@ class Transmissor(Thread):
 				except:
 					pass
 
-				transmitir_event.clear()
+				compartilhados.transmitir_event.clear()
 
 		self.connection.close()

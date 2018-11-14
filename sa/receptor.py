@@ -1,9 +1,10 @@
 import pika
 import json
 from threading import Thread
-from gerenciador import *
+import compartilhados
 from copy import deepcopy
 import time
+
 
 class Receptor(Thread):
 	"""Recebe e trata mensagens do SA"""
@@ -17,8 +18,6 @@ class Receptor(Thread):
 		self.channel.basic_consume(self.trata_msg_recebida, queue='SS_to_SA', no_ack=True)
 
 	def trata_msg_recebida(self, ch, method, properties, body):
-		global solicita_gerente, gerente_msg_lock, gerente_msg
-
 		try:
 			msg = json.loads(body)
 		except:
@@ -27,12 +26,12 @@ class Receptor(Thread):
 		# Identificador (indica que a msg veio do SS)
 		msg['_dir'] = 'ss'
 
-		with gerente_msg_lock:
+		with compartilhados.gerente_msg_lock:
 			# Copia a mensagem para o buffer de transmissao
-			gerente_msg = deepcopy(msg)
+			compartilhados.gerente_msg = deepcopy(msg)
 
 			# Chama o gerente
-			solicita_gerente.set()
+			compartilhados.solicita_gerente.set()
 
 			# Tempo de seguranca para o gerente pegar a msg
 			time.sleep(0.2)
