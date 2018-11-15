@@ -17,9 +17,15 @@ class ReceptorSA(Thread):
 
 	def trata_msg_recebida(self, ch, method, properties, body):
 		global shared_obj
+
 		try:
 			msg = json.loads(body)
 		except:
+			return
+
+		if 'robo' not in msg or \
+			(msg['robo'] != shared_obj.get(SharedObj.NomeDoRobo)
+			and msg['robo'] != 'cadastro'):
 			return
 
 		msg['_dir'] = 'sa'

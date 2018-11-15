@@ -26,9 +26,14 @@ class TransmissorSR(Thread):
 
 			if '_dir' in msg: msg.pop('_dir')
 
+			msg_prop = None
+			if '_ttl' in msg:
+				msg_prop = pika.BasicProperties(expiration=str(msg['_ttl']))
+				msg.pop('_ttl')
+
 			try:
 				msg = json.dumps(msg)
-				self.channel.basic_publish(exchange='', routing_key='SS_to_SR', body=msg)
+				self.channel.basic_publish(exchange='', routing_key='SS_to_SR', body=msg, properties=msg_prop)
 			except:
 				pass
 

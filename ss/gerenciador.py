@@ -3,6 +3,7 @@ from shared_ss import *
 from mensagens_robo import *
 from mensagens_auditor import *
 from interface_usuario import *
+import json
 
 class Gerenciador(Thread):
 	"""docstring for Gerenciador"""
@@ -12,6 +13,7 @@ class Gerenciador(Thread):
 		self.modo_jogo = None
 		self.intf_usuario = InterfaceUsuario()
 		self.intf_usuario.start()
+		self._ler_cadastro()
 
 		super(Gerenciador, self).__init__()
 
@@ -52,6 +54,7 @@ class Gerenciador(Thread):
 			return
 
 		# Tudo ok, envia mensagem ao SR
+		msg['_ttl'] = 5000
 		shared_obj.set(SharedObj.TransmitirSRLock, msg)
 		shared_obj.release(SharedObj.MensagemGerente)
 		shared_obj.clear_event(SharedObj.SolicitaGerente)
@@ -59,8 +62,14 @@ class Gerenciador(Thread):
 
 		# Ao enviar um novo jogo ao SR, a mensagem "NovoJogoConfigurado"
 		# deve ser a confirmacao que o jogo foi configurado
-		shared_obj.wait_event(SharedObj.SolicitaGerente)
+		shared_obj.wait_event(SharedObj.SolicitaGerente, timeout=5.0)
 		shared_obj.acquire(SharedObj.MensagemGerente)
+
+		if not shared_obj.is_set(SharedObj.SolicitaGerente):
+			# Aconteceu timeout
+			print("--> SA tentou iniciar jogo, porem SR nao responde.")
+			return
+
 		ack = shared_obj.get_directly(SharedObj.MensagemGerente)
 		if ack['cmd'] == MsgSRtoSS.NovoJogoConfigurado:
 			# Ok, jogo configurado !!
@@ -69,7 +78,7 @@ class Gerenciador(Thread):
 			self.modo_jogo = msg['modo_jogo']
 			ui_msg = {'modo_jogo': self.modo_jogo, 'posicao_inicial': (msg['x'], msg['y'])}
 			if 'cacas' in msg: ui_msg['cacas'] = msg['cacas']
-			
+
 			# Avisa interface usuario
 			shared_obj.set(SharedObj.InterfaceUsuarioFimJogo, 0)
 			shared_obj.set(SharedObj.InterfaceUsuarioNovoJogoConfig, ui_msg)
@@ -79,6 +88,37 @@ class Gerenciador(Thread):
 			shared_obj.clear_event(SharedObj.TransmitirSREvent)
 			shared_obj.set(SharedObj.TransmitirSRLock, {'cmd': MsgSStoSR.IniciaJogo})
 			shared_obj.set_event(SharedObj.TransmitirSREvent)
+
+	def _ler_cadastro(self):
+		global shared_obj
+		try:
+			with open('cadastro.cfg') as f:
+				cadastro = json.load(f)
+				self.cor = cadastro['cor']
+				self.nome = cadastro['nome']
+				self.mac = cadastro['mac']
+		except:
+			self.cor = 0
+			self.nome = "Grupo3"
+			self.mac = "00:00:00:00:00:00"
+
+		shared_obj.set(SharedObj.NomeDoRobo, self.nome)
+
+	def _atualiza_cadastro(self):
+		global shared_obj
+		shared_obj.set(SharedObj.NomeDoRobo, self.nome)
+		cadastro = {'cor': self.cor, 'nome': self.nome, 'mac': self.mac}
+		with open('cadastro.cfg', 'w') as f:
+			json.dump(cadastro, f)
+
+	def cadastra_robo(self, msg):
+		if 'cor' not in msg:
+			return
+
+		self.cor = msg['cor']
+		self.nome = msg['nome'] if 'nome' in msg else 'Grupo3'
+		self.mac = msg['mac'] if 'mac' in msg else '00:00:00:00:00:00'
+		self._atualiza_cadastro()
 
 	def run(self):
 		global shared_obj
@@ -159,6 +199,8 @@ class Gerenciador(Thread):
 					shared_obj.set_event(SharedObj.TransmitirSREvent)
 
 				elif cmd == MsgSAtoSS.CadastraRobo:
+					self.cadastra_robo(msg)
+
 					# Transmite para SR
 					shared_obj.set(SharedObj.TransmitirSRLock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSREvent)
@@ -229,6 +271,7 @@ class Gerenciador(Thread):
 			elif '_dir' in msg and msg['_dir'] == 'ss':
 				if cmd == MsgSStoSR.Mover:
 					# Transmite para SR
+					msg['_ttl'] = 5000
 					shared_obj.set(SharedObj.TransmitirSRLock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSREvent)
 

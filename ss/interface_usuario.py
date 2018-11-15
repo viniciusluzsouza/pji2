@@ -151,7 +151,7 @@ class InterfaceUsuario(Thread):
 		shared_obj.set_event(SharedObj.InterfaceUsuarioNovoComando)
 
 		while True:
-			shared_obj.wait_event(SharedObj.InterfaceUsuarioNovoComando)
+			shared_obj.wait_event(SharedObj.InterfaceUsuarioNovoComando, timeout=10.0)
 			if shared_obj.get(SharedObj.InterfaceUsuarioFimJogo): break
 			cmd = input("\n#### Digite o comando: ")
 

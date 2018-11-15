@@ -26,6 +26,9 @@ class TransmissorSA(Thread):
 
 			if '_dir' in msg: msg.pop('_dir')
 
+			if 'robo' not in msg:
+				msg['robo'] = shared_obj.get(SharedObj.NomeDoRobo)
+
 			try:
 				msg = json.dumps(msg)
 				self.channel.basic_publish(exchange='', routing_key='SS_to_SA', body=msg)

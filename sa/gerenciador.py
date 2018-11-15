@@ -43,6 +43,11 @@ class Gerenciador():
 		return self.gerente_db.get_partidas()
 
 
+	def _envia_msg_ss(self, msg):
+		with compartilhados.transmitir_msg_lock:
+			compartilhados.transmitir_msg = msg
+			compartilhados.transmitir_event.set()
+
 	def init_thread_rede(self):
 		def gerencia_msg_rede():
 
@@ -76,7 +81,10 @@ class Gerenciador():
 							pass
 
 						elif cmd == MsgSStoSA.ValidaCaca:
-							# Avisa interface usuario
+							# Teste: valida tudo
+							print("Recebido valida caca. Validando ...")
+							msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "ack": 1, "robo": msg['robo']}
+							self._envia_msg_ss(msg)
 							pass
 
 						elif cmd == MsgSStoSA.ObstaculoEncontrado:

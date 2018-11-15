@@ -11,6 +11,10 @@ if __name__ == '__main__':
 	gerente = Gerenciador()
 	gerente.init_thread_rede()
 
+	print("*** Antes de mais nada, cadastre o robo !!! ***")
+	print("Este nome sera usado para as mensagens enviadas ao robo")
+
+	nome = ''
 	while True:
 		print("""
  ### Escolha a opcao de mensagem:
@@ -28,7 +32,7 @@ if __name__ == '__main__':
 
 
 		op = input("Opcao: ")
-		msg = {"_dir": "teste"}
+		msg = {"_dir": "teste", "robo": nome}
 		try:
 			op = int(op)
 			if op == 1:
@@ -37,7 +41,7 @@ if __name__ == '__main__':
 				cor = int(input("Cor (int):"))
 				mac = input("MAC: ")
 				gerente.cadastra_robo(nome, cor, mac)
-				msg.update({"cmd": MsgSAtoSS.CadastraRobo, "nome": nome, "cor": cor, "mac": mac})
+				msg.update({"cmd": MsgSAtoSS.CadastraRobo, "nome": nome, "cor": cor, "mac": mac, "robo": "cadastro"})
 
 			elif op == 2:
 				# Solicita ID
@@ -66,7 +70,7 @@ if __name__ == '__main__':
 
 					print("Cacas: %s" % str(cacas))
 
-				msg.update({"cmd": MsgSAtoSS.NovoJogo, "modo_jogo": modo, \
+				msg.update({"cmd": MsgSAtoSS.NovoJogo, "modo_jogo": modo,
 							"x": x, "y": y, "cacas": cacas})
 
 			elif op == 6:

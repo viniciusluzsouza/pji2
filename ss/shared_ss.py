@@ -7,6 +7,7 @@ class SharedObj(object):
 	SolicitaGerente = 1
 	MensagemGerente = 2
 	RespostaGerente = 3
+	NomeDoRobo = 4
 
 	InterfaceEvent = 10
 	InterfaceMsg = 11
@@ -29,6 +30,7 @@ class SharedObj(object):
 		self.lock_dict = {
 			SharedObj.SolicitaGerente: Event(),
 			SharedObj.MensagemGerente: Lock(),
+			SharedObj.NomeDoRobo: Lock(),
 
 			SharedObj.InterfaceEvent: Event(),
 			SharedObj.InterfaceMsg: Lock(),
@@ -52,6 +54,7 @@ class SharedObj(object):
 		self.variables_dict = {
 			SharedObj.MensagemGerente: {},
 			SharedObj.RespostaGerente: {},
+			SharedObj.NomeDoRobo: "",
 
 			SharedObj.InterfaceMsg: {},
 
@@ -68,7 +71,7 @@ class SharedObj(object):
 		SharedObj.TransmitirSALock, SharedObj.TransmitirSAEvent, SharedObj.TransmitirSRLock, SharedObj.TransmitirSREvent, \
 		SharedObj.InterfaceUsuarioMsg, SharedObj.InterfaceUsuarioEvent, SharedObj.InterfaceUsuarioFimJogo, \
 		SharedObj.InterfaceUsuarioNovoJogoEvent, SharedObj.InterfaceUsuarioNovoJogoConfig, SharedObj.InterfaceUsuarioNovoComando, \
-		SharedObj.InterfaceUsuarioPausaSA]
+		SharedObj.InterfaceUsuarioPausaSA, SharedObj.NomeDoRobo]
 
 	def _acceptable(self, var):
 		if var not in self.acceptable:
@@ -76,17 +79,24 @@ class SharedObj(object):
 		else:
 			return True
 
-	def wait_event(self, var):
+	def wait_event(self, var, timeout=None):
 		if not self._acceptable(var):
 			return
 
-		self.lock_dict[var].wait()
+		self.lock_dict[var].wait(timeout=timeout)
 
 	def set_event(self, var):
 		if not self._acceptable(var):
 			return
 
 		self.lock_dict[var].set()
+
+
+	def is_set(self, var):
+		if not self._acceptable(var):
+			return
+
+		return self.lock_dict[var].is_set()
 
 
 	def clear_event(self, var):
