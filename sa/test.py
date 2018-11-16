@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
 
 		op = input("Opcao: ")
-		msg = {"_dir": "teste", "robo": nome}
+		msg = {"_dir": "teste", "_robo": nome}
 		try:
 			op = int(op)
 			if op == 1:
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 				cor = int(input("Cor (int):"))
 				mac = input("MAC: ")
 				gerente.cadastra_robo(nome, cor, mac)
-				msg.update({"cmd": MsgSAtoSS.CadastraRobo, "nome": nome, "cor": cor, "mac": mac, "robo": "cadastro"})
+				msg.update({"cmd": MsgSAtoSS.CadastraRobo, "nome": nome, "cor": cor, "mac": mac, "_robo": "cadastro"})
 
 			elif op == 2:
 				# Solicita ID
@@ -106,6 +106,7 @@ if __name__ == '__main__':
 			print("Opcao invalida")
 			continue
 
+		print("msg: %s" % str(msg))
 		with compartilhados.gerente_msg_lock:
 			compartilhados.gerente_msg = deepcopy(msg)
 			compartilhados.solicita_gerente.set()

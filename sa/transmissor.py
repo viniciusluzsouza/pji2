@@ -8,11 +8,11 @@ class Transmissor(Thread):
 
 	def __init__(self, host):
 		super(Transmissor, self).__init__()
+		self._exchange = 'SA_to_SA'
 
 		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host)))
 		self.channel = self.connection.channel()
-		self.channel.queue_declare(queue='SA_to_SS')
-
+		self.channel.exchange_declare(exchange=self._exchange, exchange_type='direct')
 
 	def run(self):
 		while True:
@@ -25,13 +25,16 @@ class Transmissor(Thread):
 
 				if '_dir' in msg: msg.pop('_dir')
 
-				print("Enviando: %s" % str(msg))
+				if '_robo' in msg:
+					routing_key = msg['_robo']
+					msg.pop('_robo')
 
-				try:
-					msg = json.dumps(msg)
-					self.channel.basic_publish(exchange='', routing_key='SA_to_SS', body=msg)
-				except:
-					pass
+					print("Transmitindo: %s" % str(msg))
+					try:
+						msg = json.dumps(msg)
+						self.channel.basic_publish(exchange=self._exchange, routing_key=routing_key, body=msg)
+					except:
+						pass
 
 				compartilhados.transmitir_event.clear()
 
