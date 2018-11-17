@@ -6,6 +6,8 @@ from gerenciador import *
 from time import sleep
 
 def main():
+	gerente = Gerenciador()
+
 	transmissorsr = TransmissorSR("localhost")
 	transmissorsr.start()
 
@@ -18,9 +20,7 @@ def main():
 	receptorsa = ReceptorSA("localhost")
 	receptorsa.start()
 
-	gerente = Gerenciador()
 	gerente.start()
-
 
 if __name__ == '__main__':
 	main()

@@ -28,7 +28,7 @@ class TransmissorSR(Thread):
 
 			msg_prop = None
 			if '_ttl' in msg:
-				msg_prop = pika.BasicProperties(expiration=str(msg['_ttl']))
+				msg_prop = pika.BasicProperties(expiration=str(msg['_ttl']*1000))
 				msg.pop('_ttl')
 
 			try:

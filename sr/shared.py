@@ -17,6 +17,7 @@ class SharedObj(object):
 	InterfaceFimJogo = 30
 	InterfaceCacasAtualizadas = 31
 	InterfacePauseContinua = 32
+	InterfaceNovasCacas = 33
 
 	TransmitirLock = 40
 	TransmitirEvent = 41
@@ -37,6 +38,7 @@ class SharedObj(object):
 			SharedObj.InterfaceFimJogo: Lock(),
 			SharedObj.InterfaceCacasAtualizadas: Lock(),
 			SharedObj.InterfacePauseContinua: Lock(),
+			SharedObj.InterfaceNovasCacas: Lock(),
 			SharedObj.TransmitirLock: Lock(),
 			SharedObj.TransmitirEvent: Event(),
 			SharedObj.InterfaceEvent: Event(),
@@ -54,6 +56,7 @@ class SharedObj(object):
 			SharedObj.InterfaceFimJogo: 0,
 			SharedObj.InterfaceCacasAtualizadas: [],
 			SharedObj.InterfacePauseContinua: 0,
+			SharedObj.InterfaceNovasCacas: 0,
 			SharedObj.TransmitirLock: {},
 			SharedObj.InterfaceEventMsg: {},
 			SharedObj.InterfaceRespValidaCacaMsg: {},
@@ -61,8 +64,8 @@ class SharedObj(object):
 
 		self.acceptable = [SharedObj.MoverCoordenada, SharedObj.MoverMovimento, SharedObj.MoverHistorico, \
 		SharedObj.ManualMovimento, SharedObj.AutomaticoValidarCaca, SharedObj.InterfaceFimJogo, \
-		SharedObj.InterfaceCacasAtualizadas, SharedObj.InterfacePauseContinua, SharedObj.MoverCoordenadaEvent, \
-		SharedObj.TransmitirLock, SharedObj.TransmitirEvent, SharedObj.InterfaceEvent, \
+		SharedObj.InterfaceCacasAtualizadas, SharedObj.InterfacePauseContinua, SharedObj.InterfaceNovasCacas, \
+		SharedObj.MoverCoordenadaEvent, SharedObj.TransmitirLock, SharedObj.TransmitirEvent, SharedObj.InterfaceEvent, \
 		SharedObj.InterfaceEventMsg, SharedObj.InterfaceRespValidaCacaEvent, SharedObj.InterfaceRespValidaCacaMsg]
 
 	def _acceptable(self, var):

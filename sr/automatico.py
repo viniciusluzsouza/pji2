@@ -1,5 +1,5 @@
-from mover_test import *
-# from mover import *
+# from mover_test import *
+from mover import *
 from interface import *
 from threading import Thread, Lock
 from shared import *
@@ -176,6 +176,7 @@ class Automatico(Thread):
 	def atualiza_cacas(self):
 		global shared_obj
 		self.cacas_ordenadas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
+		shared_obj.set(SharedObj.InterfaceNovasCacas, 0)
 		eu = (self._x, self._y)
 		if eu in self.cacas_ordenadas:
 			self.cacas_ordenadas.remove(eu)
@@ -231,6 +232,8 @@ class Automatico(Thread):
 			if self._verifica_pausa() == Mover.EXIT:
 				return
 			if shared_obj.get(SharedObj.InterfaceFimJogo):
+				return
+			if shared_obj.get(SharedObj.InterfaceNovasCacas):
 				return
 
 	def run(self):

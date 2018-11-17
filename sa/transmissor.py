@@ -29,10 +29,18 @@ class Transmissor(Thread):
 					routing_key = msg['_robo']
 					msg.pop('_robo')
 
+					msg_prop = None
+					if '_ttl' in msg:
+						msg_prop = pika.BasicProperties(expiration=str(msg['_ttl']))
+						msg.pop('_ttl')
+
 					print("Transmitindo: %s" % str(msg))
 					try:
 						msg = json.dumps(msg)
-						self.channel.basic_publish(exchange=self._exchange, routing_key=routing_key, body=msg)
+						self.channel.basic_publish(exchange=self._exchange,
+												   routing_key=routing_key,
+												   body=msg,
+												   properties=msg_prop)
 					except:
 						pass
 

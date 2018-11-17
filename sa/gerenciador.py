@@ -83,7 +83,7 @@ class Gerenciador():
 						elif cmd == MsgSStoSA.ValidaCaca:
 							# Teste: valida tudo
 							print("Recebido valida caca. Validando ...")
-							msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "ack": 1, "robo": msg['robo']}
+							msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "ack": 1, "_robo": msg['robo']}
 							self._envia_msg_ss(msg)
 							pass
 

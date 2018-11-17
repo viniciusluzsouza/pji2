@@ -1,7 +1,7 @@
 from manual import *
 from automatico import *
-# from mover import *
-from mover_test import *
+from mover import *
+# from mover_test import *
 from shared import *
 from receptor import *
 from transmissor import *
@@ -21,7 +21,7 @@ class InterfaceSR(Thread):
 		self.modo = None
 		self.cacas = []
 		self.cacador = None
-		self.mac = "00:00:00:00:00:00"
+		self.mac = self._get_mac()
 		self._ler_cadastro()
 		#self.identidade = self._get_mac()
 
@@ -63,11 +63,12 @@ class InterfaceSR(Thread):
 		global shared_obj
 		shared_obj.set(SharedObj.MoverMovimento, Mover.PARADO)
 		shared_obj.set(SharedObj.MoverHistorico, [])
-		shared_obj.set(SharedObj.MoverCoordenada, self.coord_inicial)
 		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
+		shared_obj.set(SharedObj.MoverCoordenada, self.coord_inicial)
 		shared_obj.set(SharedObj.ManualMovimento, Mover.PARADO)
 		shared_obj.set(SharedObj.AutomaticoValidarCaca, 0)
 		shared_obj.set(SharedObj.InterfaceRespValidaCacaMsg, {})
+		shared_obj.set(SharedObj.InterfaceNovasCacas, 0)
 		shared_obj.clear_event(SharedObj.InterfaceRespValidaCacaEvent)
 		shared_obj.set(SharedObj.InterfaceFimJogo, 0)
 		shared_obj.set(SharedObj.InterfaceCacasAtualizadas, [])
@@ -135,6 +136,7 @@ class InterfaceSR(Thread):
 		for caca in cacas:
 			new_cacas.append((caca['x'], caca['y']))
 		shared_obj.set(SharedObj.InterfaceCacasAtualizadas, new_cacas)
+		shared_obj.set(SharedObj.InterfaceNovasCacas, 1)
 
 
 	def _atualiza_pos_adv(self, pos):
@@ -285,10 +287,10 @@ class InterfaceSR(Thread):
 			shared_obj.clear_event(SharedObj.InterfaceEvent)
 
 if __name__ == "__main__":
-	t = Transmissor("localhost")
+	t = Transmissor("192.168.1.100")
 	t.start()
 
-	r = Receptor("localhost")
+	r = Receptor("192.168.1.100")
 	r.start()
 
 	i = InterfaceSR()

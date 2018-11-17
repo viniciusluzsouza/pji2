@@ -12,7 +12,6 @@ class Gerenciador(Thread):
 		self.jogo_em_andamento = 0
 		self.modo_jogo = None
 		self.intf_usuario = InterfaceUsuario()
-		self.intf_usuario.start()
 		self._ler_cadastro()
 
 		super(Gerenciador, self).__init__()
@@ -54,7 +53,7 @@ class Gerenciador(Thread):
 			return
 
 		# Tudo ok, envia mensagem ao SR
-		msg['_ttl'] = 5000
+		msg['_ttl'] = 10
 		shared_obj.set(SharedObj.TransmitirSRLock, msg)
 		shared_obj.release(SharedObj.MensagemGerente)
 		shared_obj.clear_event(SharedObj.SolicitaGerente)
@@ -62,7 +61,7 @@ class Gerenciador(Thread):
 
 		# Ao enviar um novo jogo ao SR, a mensagem "NovoJogoConfigurado"
 		# deve ser a confirmacao que o jogo foi configurado
-		shared_obj.wait_event(SharedObj.SolicitaGerente, timeout=5.0)
+		shared_obj.wait_event(SharedObj.SolicitaGerente, timeout=10.0)
 		shared_obj.acquire(SharedObj.MensagemGerente)
 
 		if not shared_obj.is_set(SharedObj.SolicitaGerente):
@@ -122,6 +121,8 @@ class Gerenciador(Thread):
 
 	def run(self):
 		global shared_obj
+		self.intf_usuario.start()
+		
 		while True:
 			# Espera alguma mensagem ...
 			shared_obj.wait_event(SharedObj.SolicitaGerente)

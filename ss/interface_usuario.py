@@ -27,13 +27,6 @@ class InterfaceUsuario(Thread):
 	SA_AtualizaMapa = 8
 
 	def __init__(self):
-		os.system('clear')
-		print("###################################################")
-		print("####                BEM VINDO !!!              ####")
-		print("#### Interface de supervisao de robo - Grupo 3 ####")
-		print("###################################################")
-		print("\nAguardando solicitacao de novo jogo do SA ... \n")
-
 		super(InterfaceUsuario, self).__init__()
 
 
@@ -151,7 +144,7 @@ class InterfaceUsuario(Thread):
 		shared_obj.set_event(SharedObj.InterfaceUsuarioNovoComando)
 
 		while True:
-			shared_obj.wait_event(SharedObj.InterfaceUsuarioNovoComando, timeout=10.0)
+			shared_obj.wait_event(SharedObj.InterfaceUsuarioNovoComando, timeout=15.0)
 			if shared_obj.get(SharedObj.InterfaceUsuarioFimJogo): break
 			cmd = input("\n#### Digite o comando: ")
 
@@ -211,6 +204,14 @@ class InterfaceUsuario(Thread):
 
 	def run(self):
 		global shared_obj
+
+		os.system('clear')
+		print("###################################################")
+		print("####                BEM VINDO !!!              ####")
+		print("#### Interface de supervisao de robo - Grupo 3 ####")
+		print("###################################################")
+		print("\nAguardando solicitacao de novo jogo do SA ... \n")
+
 		while True:
 			shared_obj.wait_event(SharedObj.InterfaceUsuarioNovoJogoEvent)
 			shared_obj.acquire(SharedObj.InterfaceUsuarioNovoJogoConfig)
