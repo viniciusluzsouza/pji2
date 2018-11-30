@@ -1,28 +1,39 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from tkinter import *
+from random import randint
+
+from Coordenada import *
 
 class InterfaceGrafica:
 
-    def __init__(self, dados, mapa):
+    def __init__(self):
+        dados = Tk()
+        mapa = Tk()
+        dados.title("Informações")
+        mapa.title("Mapa")
         self.fontePadrao = ("Arial", "40")
         self.fonteMenor = ("Arial", "30")
-        self.textoParadaRobo1 = StringVar()
-        self.textoParadaRobo2 = StringVar()
-        self.dadosRobo1 = StringVar()
-        self.dadosRobo2 = StringVar()
-        self.dadosGerais = StringVar()
-        self.coordMapaNula = StringVar()
-        self.coordMapa = StringVar()
-        self.coordCaca = StringVar()
-        self.coordRobo1 = StringVar()
-        self.coordRobo2 = StringVar()
-        self.dados = dados
-        self.mapa = mapa
+        self.fonteMapa = ('Helvetica 12 bold')
+        self.backgroudDefault = "gray75"
+
+        # ------------- DADOS -------------
+        self.nomeR1 = StringVar()
+        self.nomeR2 = StringVar()
+        self.textoParadaR1 = StringVar() # texto "Parada de emergência"
+        self.textoParadaR2 = StringVar()
+        self.dadosR1 = StringVar() # qtd cacas encontradas, pos atual e prox pos
+        self.dadosR2 = StringVar()
+        self.dadosGerais = StringVar() # total cacas, cacas encontradas e cacas restantes
+        self.textoPausa = StringVar() # escreve pausa ou continua, dependendo da status do robô
 
         # --- Cor dos LEDs dos robôs ----
-        self.backgroudRobo1 = "red"
-        self.backgroudRobo2 = "yellow"
+        self.backgroudR1 = "red2"
+        self.backgroudR2 = "gold"
+
+        # --- Cor das coordenadas (0,0) e (20,20) -----
+        self.backgroudMapa00 = "yellow"
+        self.backgroudMapa66 = "blue"
 
         self.container1 = Frame(mapa)
         self.container2 = Frame(dados)
@@ -36,7 +47,7 @@ class InterfaceGrafica:
         self.container10 = Frame(dados)
         self.container11 = Frame(dados)
 
-        #adicionando os containers
+        # adicionando os containers
         self.container1.pack()
         self.container2.pack()
         self.container3.pack()
@@ -49,102 +60,237 @@ class InterfaceGrafica:
         self.container10.pack()
         self.container11.pack()
 
-        # ==== Mapa =====
-        mapa.geometry("1000x600")
+        # ---------- MAPA ----------
+        mapa.geometry("1000x700")
         # mapa.configure(background="Gray")
 
         self.espaco = Label(self.container1, text='Mapa', font=self.fontePadrao, pady="50").pack()
 
-        linhas = 10
-        colunas = 10
-        for i in range(0, linhas):
-            for j in range(0, colunas):
-                # self.cacas = False
-                # self.matriz[i][j] = self.cacas
+        # self.desenhaMapa("G1", 0, 7, "G2", 6,1)
 
-                # ----- ROBÔ -----
-                if(i == 0 and j == 0):
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="r1")
-                    self.b1.grid(row=i, column=j, sticky='news')
-                elif (i == 9 and j == 9):
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="r2")
-                    self.b1.grid(row=i, column=j, sticky='news')
+        R1 = Coordenada(0, 0)
+        R1 = self.transformaCoord(R1)
 
-                # ----- CAÇAS ------
-                elif (i == 3 and j == 4):
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="c")
-                    self.b1.grid(row=i, column=j, sticky='news')
-                elif (i == 6 and j == 3):
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="c")
-                    self.b1.grid(row=i, column=j, sticky='news')
-                elif (i == 8 and j == 6):
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="c")
-                    self.b1.grid(row=i, column=j, sticky='news')
-                elif (i == 2 and j == 1):
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="c")
-                    self.b1.grid(row=i, column=j, sticky='news')
-                elif (i == 1 and j == 9):
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="c")
-                    self.b1.grid(row=i, column=j, sticky='news')
+        R2 = Coordenada(6, 6)
+        R2 = self.transformaCoord(R2)
 
-                # ----- NÃO HÁ NADA -------
-                else:
-                    self.b1 = Button(self.container7, padx='20', pady='10', text="  ")
-                    self.b1.grid(row=i, column=j, sticky='news')
+        self.desenhaMapa("G1", R1, "G2", R2, self.getListaCacas())
 
-        # ==== dados iniciais de cada robô ====
+        # --------------------- DADOS INICIAIS DE CADA ROBÔ ---------------------
+        # self.nomeR1.set("")
+        # self.nomeR2.set("")
+
         self.cacas1 = 0
         self.cacas2 = 0
         self.pos1 = "(0, 0)"
-        self.pos2 = "(20, 20)"
+        self.pos2 = "(6, 6)"
         self.prox1 = "(-, -)"
         self.prox2 = "(-, -)"
 
-        self.dadosRobo1.set('Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s' % (self.cacas1, self.pos1, self.prox1))
-        self.dadosRobo2.set('Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s' % (self.cacas2, self.pos2, self.prox2))
+        self.dadosR1.set(' Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s' % (self.cacas1, self.pos1, self.prox1))
+        self.dadosR2.set(' Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s' % (self.cacas2, self.pos2, self.prox2))
 
-        # ==== dados iniciais gerais ====
+        # ---------------- DADOS INICIAIS GERAIS ----------------
         self.totalCacas = 0 # Vê o tamanho da lista de caças
         self.cacasEncontradas = 0
         self.cacasRestantes = (self.totalCacas - self.cacasEncontradas)
 
-        self.dadosGerais.set('Total de caças: %d\n Caças encontradas: %d\n Caças restantes: %d\n' % (self.totalCacas, self.cacasEncontradas, self.cacasRestantes))
+        self.dadosGerais.set('Total de caças: %d\n Caças encontradas: %d\n Caças restantes: %d' % (self.totalCacas, self.cacasEncontradas, self.cacasRestantes))
 
-        # self.espaco = Label(self.container2, text='Informações', font=self.fontePadrao, pady="50").pack()
-        # TRANSFORMAR EM TEXTVARIABLE PARA PODER RECEBER OS NOMES DOS ROBÔS:
-        self.textbox = Label(self.container2, text='G1', font=self.fontePadrao, bg = self.backgroudRobo1, width = 20).pack(side=LEFT)
-        self.textbox = Label(self.container3, textvariable=self.dadosRobo1, font=self.fonteMenor, bg="gray", width=27, height=5).pack(side=LEFT)
-        self.parada = Label(self.container4, font=self.fontePadrao, textvariable=self.textoParadaRobo1, foreground= "red", width=20).pack(side=LEFT)
+        self.textoPausa.set('Pausa')
+
+        # ------------------------------------------ CONFIGURANDO CONTAINERS ------------------------------------------
+        #self.espaco = Label(self.container2, text='Informações', font=self.fontePadrao, pady="25").pack()
+        #self.textbox = Label(self.container2, text='Informações', font=self.fontePadrao, width=25).pack()
+        self.textbox = Label(self.container2, textvariable=self.nomeR1, font=self.fontePadrao, bg = self.backgroudR1, width = 20).pack(side=LEFT)
+        self.container2.pack(fill=X)
+        self.textbox = Label(self.container3, textvariable=self.dadosR1, font=self.fonteMenor, bg=self.backgroudDefault, width=27, height=4, anchor=W, justify=LEFT).pack(side=LEFT)
+        #self.container3.pack(fill=BOTH) #BOTH -> expande tanto horizontalmente e verticalmente
+        self.container3.pack(fill=X)
+        self.parada = Label(self.container4, font=self.fontePadrao, textvariable=self.textoParadaR1, foreground= "red", width=20).pack(side=LEFT)
         self.espaco = Label(self.container2, text='', font=self.fontePadrao, width=5).pack(side=LEFT)
         self.espaco = Label(self.container3, text='', font=self.fontePadrao, width=5).pack(side=LEFT)
         self.espaco = Label(self.container4, text='', font=self.fontePadrao, width=5).pack(side=LEFT)
-        self.textbox = Label(self.container2, text='G2', font=self.fontePadrao, bg=self.backgroudRobo2, width = 20).pack(side=RIGHT)
-        self.textbox = Label(self.container3, textvariable=self.dadosRobo2, font=self.fonteMenor, bg="gray", width=27, height=5).pack(side=RIGHT)
-        self.parada = Label(self.container4, font=self.fontePadrao, textvariable=self.textoParadaRobo2, foreground="red", width=20).pack(side=RIGHT)
-        self.textbox = Label(self.container5, textvariable=self.dadosGerais, font=self.fonteMenor, bg="gray", width=61).pack()
+        self.textbox = Label(self.container2, textvariable=self.nomeR2, font=self.fontePadrao, bg=self.backgroudR2, width = 20).pack(side=RIGHT)
+        self.textbox = Label(self.container3, textvariable=self.dadosR2, font=self.fonteMenor, bg=self.backgroudDefault, width=27, height=4, anchor=W, justify=LEFT).pack(side=RIGHT)
+        self.parada = Label(self.container4, font=self.fontePadrao, textvariable=self.textoParadaR2, foreground="red", width=20).pack(side=RIGHT)
+        self.textbox = Label(self.container5, textvariable=self.dadosGerais, font=self.fonteMenor, bg=self.backgroudDefault, width=62).pack()
+        self.container5.pack(fill=X) #VERIFICAR SE FUNCIONA
 
-        self.b2 = Button(self.container6, text='Obstáculo️', font=self.fontePadrao, command=self.paradaEmergencia, bg="gray", width=20).pack(side=LEFT)
-        self.b2 = Button(self.container6, text='Sem obstáculo️', font=self.fontePadrao, command=self.apagaTexto, bg="gray", width=20).pack(side=RIGHT)
+        # Se o robô pedir para validar alguma caça, o botão aparece, senão ele continua invisivel
+        self.b2 = Button(self.container6, text='Validar caça', font=self.fontePadrao, command=self.validarCaca, bg=self.backgroudDefault, width=20).pack()
+        self.b3 = Button(self.container6, textvariable=self.textoPausa, font=self.fontePadrao, command=self.botaoDeTestes, bg=self.backgroudDefault, width=20).pack()
+        self.b4 = Button(self.container6, text='Fim de jogo', font=self.fontePadrao, command=self.apagaTexto, bg=self.backgroudDefault, width=20).pack()
 
-    # def verificaListaCacas(self):
-    #     self.cacas = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        dados.mainloop()
+        mapa.mainloop()
 
-    def addCaca(self):
-        if self.b1["textvariable"] == " ":
-            self.b1["textvariable"] = "r1"
+    def desenhaMapa(self, nomeR1, posR1, nomeR2, posR2, listaCacas):
 
-    def paradaEmergencia(self):
-        self.textoParadaRobo1.set("Parada de emergência")
-        print("Obstáculo")
-        # ==== dados vindos do SS ====
+        #print("(%d, %d)" % (listaCacas[0].getX(), listaCacas[0].getY()))
+        #print("R1 (%d, %d)" % (posR1.getX(), posR1.getY()))
+
+        for i in range(0, 8):
+            for j in range(0, 8):
+
+                self.b1 = Button(self.container7, padx=20, pady=10, width=2)
+                self.b1.grid(row=i, column=j, sticky='news', padx=5, pady=5)
+
+                if (i == 7 and j == 0): # Espaço vazio entre 0 e 0
+                    self.coord = Label(self.container7, text='')
+                    self.coord.grid(row=i, column=j, sticky='news')
+
+                if (i == 7 and j != 0): # Eixo X do tabuleiro
+                    self.coord = Label(self.container7, text='%d' % (j - 1))
+                    self.coord.grid(row=i, column=j, sticky='news')
+
+                if (j == 0 and i != 7): # Eixo Y do tabuleiro
+                    self.coord = Label(self.container7, text='%d' % (abs(i - 6)))
+                    self.coord.grid(row=i, column=j, sticky='news')
+
+                if (i == 6 and j == 1):  # Extremo inferior
+
+                    self.b1 = Button(self.container7, padx=20, pady=10)
+                    self.b1.grid(row=i, column=j, sticky='news', padx=5, pady=5)
+                    self.b1.config(highlightbackground=self.backgroudMapa00)
+
+                elif (i == 0 and j == 7): # Extremo superior
+                    self.b1 = Button(self.container7, padx=20, pady=10)
+                    self.b1.grid(row=i, column=j, sticky='news', padx=5, pady=5)
+                    self.b1.config(highlightbackground=self.backgroudMapa66)
+
+                # Desenha posição do robô 1
+                xR1 = posR1.getX()
+                yR1 = posR1.getY()
+                if (xR1 == 6 and yR1 == 1):
+                    self.b1 = Button(self.container7, padx=20, pady=10, text=nomeR1, font=self.fonteMapa)
+                    self.b1.grid(row=xR1, column=yR1, padx=5, pady=5)
+                    self.b1.config(highlightbackground=self.backgroudMapa00, bg=self.backgroudR1)
+
+                elif (xR1 == 0 and yR1 == 7):
+                    self.b1 = Button(self.container7, padx=20, pady=10, text=nomeR1)
+                    self.b1.grid(row=xR1, column=yR1, padx=5, pady=5)
+                    self.b1.config(highlightbackground=self.backgroudMapa66, bg=self.backgroudR1,font=self.fonteMapa)
+
+                else:
+                    self.b1 = Button(self.container7, padx=20, pady=10, text=nomeR1, font=self.fonteMapa)
+                    self.b1.grid(row=xR1, column=yR1, padx=5, pady=5)
+                    self.b1.config(bg=self.backgroudR1)
+
+                # Desenha posição do robô 2
+                xR2 = posR2.getX()
+                yR2 = posR2.getY()
+                if (xR2 == 6 and yR2 == 1):
+                    self.b1 = Button(self.container7, padx=20, pady=10, text=nomeR2, font=self.fonteMapa)
+                    self.b1.grid(row=xR2, column=yR2, padx=5, pady=5)
+                    self.b1.config(highlightbackground=self.backgroudMapa00, bg=self.backgroudR2, font=self.fonteMapa)
+
+                elif (xR2 == 0 and yR2 == 7):
+                    self.b1 = Button(self.container7, padx=20, pady=10, text=nomeR2)
+                    self.b1.grid(row=xR2, column=yR2, padx=5, pady=5)
+                    self.b1.config(highlightbackground=self.backgroudMapa66, bg=self.backgroudR2, font=self.fonteMapa)
+
+                else:
+                    self.b1 = Button(self.container7, padx=20, pady=10, text=nomeR2, font=self.fonteMapa)
+                    self.b1.grid(row=xR2, column=yR2, padx=5, pady=5)
+                    self.b1.config(bg=self.backgroudR2)
+
+                # Desenha as posições das caças
+                c = 0
+                for n in listaCacas:
+                    cacaX = listaCacas[c].getX()
+                    cacaY = listaCacas[c].getY()
+                    if (cacaX == 6 and cacaY == 1):
+                        self.b1 = Button(self.container7, padx=20, pady=10, text="C%d" %(c+1), font=self.fonteMapa)
+                        self.b1.grid(row=cacaX, column=cacaY, padx=5, pady=5)
+                        self.b1.config(highlightbackground=self.backgroudMapa00, bg='white', font=self.fonteMapa)
+
+                    elif (cacaX == 0 and cacaY == 7):
+                        self.b1 = Button(self.container7, padx=20, pady=10, text='C%d' %(c+1))
+                        self.b1.grid(row=cacaX, column=cacaY, padx=5, pady=5)
+                        self.b1.config(highlightbackground=self.backgroudMapa66, bg='white', font=self.fonteMapa)
+
+                    else:
+                        self.b1 = Button(self.container7, padx=20, pady=10, text='C%d' %(c+1), font=self.fonteMapa)
+                        self.b1.grid(row=cacaX, column=cacaY, padx=5, pady=5)
+                        self.b1.config(bg='white')
+                    c = (c + 1)
+
+    def validarCaca(self):
+        # AQUI FICA A LÓGICA DO VALIDA CAÇA
+
+        # SE FOI O R2 QUE PEDIU
+        self.textoParadaR2.set("Caça (x, y) validada")
+
+    def getListaCacas(self):
+
+        listaCacas = []
+
+        c1 = Coordenada(1, 2)
+        c1 = self.transformaCoord(c1)
+        c2 = Coordenada(1, 3)
+        c2 = self.transformaCoord(c2)
+        c3 = Coordenada(1, 4)
+        c3 = self.transformaCoord(c3)
+        c4 = Coordenada(1, 5)
+        c4 = self.transformaCoord(c4)
+
+        listaCacas.append(c1)
+        listaCacas.append(c2)
+        listaCacas.append(c3)
+        listaCacas.append(c4)
+
+        return listaCacas
+
+    def transformaCoord(self, obj):
+        c = Coordenada(abs(obj.getY()-6), abs(obj.getX() + 1))
+        return c
+
+    def botaoDeTestes(self):
+        # self.textoParadaR1.set("Parada de emergência")
+        # print("Obstáculo")
+        self.textoParadaR1.set("Partida pausada")
+        print("Pausa")
+        self.textoPausa.set('Continua')
+
+        # ------- DADOS VINDO DO SS -------
+        nR1 = "G1"
+        nR2 = "G2"
+
+        R1 = Coordenada(randint(0,6), randint(0,6))
+        posR1X = R1.getX()
+        posR1Y = R1.getY()
+        R1 = self.transformaCoord(R1)
+
+        R2 = Coordenada(randint(0, 6), randint(0, 6))
+        posR2X = R2.getX()
+        posR2Y = R2.getY()
+        R2 = self.transformaCoord(R2)
+
+        xProxR1 = randint(0, 6)
+        yProxR1 = randint(0, 6)
+
+        xProxR2 = randint(0, 6)
+        yProxR2 = randint(0, 6)
+
+        self.desenhaMapa(nR1, R1, nR2, R2, self.getListaCacas())
+
         self.cacas1 = 2
         self.cacas2 = 1
-        self.pos1 = "(10, 5)"
-        self.pos2 = "(5, 6)"
-        self.prox1 = "(10, 4)"
-        self.prox2 = "(6, 6)"
-        self.dadosRobo1.set('Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s\n' % (self.cacas1, self.pos1, self.prox1))
-        self.dadosRobo2.set('Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s\n' % (self.cacas2, self.pos2, self.prox2))
+
+
+        self.pos1 = "(%d, %d)" % (posR1X, posR1Y)
+        self.pos2 = "(%d, %d)" % (posR2X, posR2Y)
+
+        self.prox1 = "(%d, %d)" % (xProxR1, yProxR1)
+        self.prox2 = "(%d, %d)" % (xProxR2, yProxR2)
+
+        self.dadosR1.set(' Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s' % (self.cacas1, self.pos1, self.prox1))
+        self.dadosR2.set(' Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s' % (self.cacas2, self.pos2, self.prox2))
+        # MOSTRAR QUANDO O ROBÔ QUER VALIDAR CAÇA
+
+        self.nomeR1.set(nR1)
+        self.nomeR2.set(nR2)
 
         self.totalCacas = 5
         self.cacasEncontradas = 3
@@ -152,12 +298,5 @@ class InterfaceGrafica:
         self.dadosGerais.set('Total de caças: %d\n Caças encontradas: %d\n Caças restantes: %d' % (self.totalCacas, self.cacasEncontradas, self.cacasRestantes))
 
     def apagaTexto(self):
-        self.textoParadaRobo1.set("")
-
-dados = Tk()
-mapa = Tk()
-dados.title("Informações")
-mapa.title("Mapa")
-InterfaceGrafica(dados, mapa)
-dados.mainloop()
-mapa.mainloop()
+        self.textoParadaR1.set("")
+        self.textoParadaR2.set("")

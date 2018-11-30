@@ -43,10 +43,10 @@ class InterfaceUsuario(Thread):
 
 				cmd = msg['cmd']
 				if cmd == InterfaceUsuario.SR_MovendoPara:
-					print("\n[SR] Movendo para: (%i, %i)" % (msg['x'], msg['y']))
+					print("\n[SR] Movendo para: (%s, %s)" % (str(msg['x']), str(msg['y'])))
 
 				elif cmd == InterfaceUsuario.SR_PosicaoAtual:
-					print("[SR] Posicao atual: (%i, %i)" % (msg['x'], msg['y']))
+					print("[SR] Posicao atual: (%s, %s)" % (str(msg['x']), str(msg['y'])))
 					if manual: shared_obj.set_event(SharedObj.InterfaceUsuarioNovoComando)
 
 				elif cmd == InterfaceUsuario.SR_ValidaCaca:

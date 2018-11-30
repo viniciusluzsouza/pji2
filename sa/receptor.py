@@ -27,8 +27,11 @@ class Receptor(Thread):
 		msg['_dir'] = 'ss'
 
 		with compartilhados.gerente_msg_lock:
+
 			# Copia a mensagem para o buffer de transmissao
-			compartilhados.gerente_msg = deepcopy(msg)
+			foo = deepcopy(msg)
+			print("Recebendo do robo", foo)
+			compartilhados.gerente_msg = foo
 
 			# Chama o gerente
 			compartilhados.solicita_gerente.set()

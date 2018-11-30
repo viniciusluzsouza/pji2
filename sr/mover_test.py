@@ -136,7 +136,7 @@ class Mover(Thread):
 		print("[MOVER]: Chegamos")
 		self._coord_x = calc_coord[0]
 		self._coord_y = calc_coord[1]
-		print("[MOVER]: Coord Atual: (%d, %d)" % (self._coord_x, self._coord_y))
+		print("[MOVER]: Coord Atual: (%s, %s)" % (str(self._coord_x), str(self._coord_y)))
 		self._finalizar_movimento()
 
 		#Salvar os movimentos no historico

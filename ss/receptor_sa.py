@@ -11,7 +11,7 @@ class ReceptorSA(Thread):
 		global shared_obj
 		super(ReceptorSA, self).__init__()
 		self._nome = shared_obj.get(SharedObj.NomeDoRobo)
-		self._exchange = 'SA_to_SA'
+		self._exchange = 'SA_to_SS'
 
 		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host)))
 		self.channel = self.connection.channel()
@@ -50,3 +50,4 @@ class ReceptorSA(Thread):
 
 	def run(self):
 		self.channel.start_consuming()
+
