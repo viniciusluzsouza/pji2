@@ -44,6 +44,7 @@ class MsgAuditorToUI(object):
 	SolicitaStatus_RESP = 3007
 	RecuperarCadastro = 3008
 	DeclararVencedor = 3030
+	Movendo = 3010
 
 class MsgUItoAuditor(object):
 	"""docstring for MsgUItoAuditor"""

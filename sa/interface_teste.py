@@ -1,5 +1,3 @@
-from gerenciador import *
-from status import *
 import compartilhados
 from copy import deepcopy
 from mensagens_auditor import *
@@ -84,17 +82,24 @@ class Inter(Thread):
                     print("Na posição: ", '(', msg['x'], ',', msg['y'], ')')
                     x = 0
                     y = 0
-                    if msg['robo'] == self.status.getRoboA():
-                        x, y = self.status.getCoordRobo(status.getRoboA())
 
-                    elif msg['robo'] == status.getRoboB():
-                        x, y = self.status.getCoordRobo(status.getRoboB())
+                    if msg['robo'] == self.status.getRoboA():
+                        x, y = self.status.getCoordRobo(self.status.getRoboA())
+
+                    elif msg['robo'] == self.status.getRoboB():
+                        x, y = self.status.getCoordRobo(self.status.getRoboB())
                     print("POSICAO DO ROBO: ", "(", x, ",", y, ")")
 
-                    v = input("VALIDAR?\n(s) SIM\n(n)NÃO\n")
-                    if v == 's':
-                        msg = {'_dir': 'ui', 'cmd': MsgUItoAuditor.ValidarCaca, 'validacao': 1, 'x': msg['x'], 'y': msg['y']}
-                        self.avisar_gerenciador(msg)
+
+                    while True:
+                        v = input("VALIDAR?\n(s) SIM\n(n) NÃO\n")
+                        if v == 's':
+                            msg = {'_robo': msg['robo'], '_dir': 'ui', 'cmd': MsgUItoAuditor.ValidarCaca, 'validacao': 1, 'x': msg['x'], 'y': msg['y']}
+                            self.avisar_gerenciador(msg)
+                            break
+
+                        else:
+                            print("Comando invalido")
 
 
 

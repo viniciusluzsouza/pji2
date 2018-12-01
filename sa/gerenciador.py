@@ -86,6 +86,7 @@ class Gerenciador():
                 with compartilhados.gerente_msg_lock:
                     msg = deepcopy(compartilhados.gerente_msg)
 
+                    print("Lendo msg", msg)
                     if 'cmd' not in msg:
                         compartilhados.solicita_gerente.clear()
                         continue
@@ -103,14 +104,9 @@ class Gerenciador():
                         # Quando o Robo diz que está indo para tal lugar
                         # Implica-se que ele verificou a possibilidade dessa movimentacao
                         if cmd == MsgSStoSA.MovendoPara:
-                            self.status.atualizarPosicaoRobo(msg['robo'], msg['x'], msg['y'])
+                            self.status.movendo(msg['x'], msg['y'])
                             # Avisa interface usuario
-                            if msg['robo'] == self.status.getRoboA:
-                                msg["cmd"] = MsgAuditorToUI.AtualizarRobo
-                                pass
-                            else:
-                                msg["cmd"] =MsgAuditorToUI.AtualizarRobo
-                                pass
+                            msg["cmd"] = MsgAuditorToUI.Movendo
                             self._envia_msg_ui(msg)
 
                         elif cmd == MsgSStoSA.PosicaoAtual:
@@ -124,6 +120,7 @@ class Gerenciador():
 
 
                         elif cmd == MsgSStoSA.ValidaCaca:
+
                             msg = {"cmd": MsgAuditorToUI.ValidarCaca, "robo": msg['robo'], 'x': msg['x'],
                                    'y': msg['y']}
                             self._envia_msg_ui(msg)
@@ -193,21 +190,26 @@ class Gerenciador():
                         elif cmd == MsgUItoAuditor.ValidarCaca:
                             if msg['validacao'] == 1:
 
-                                self.status.atualizarCacas(msg['robo'], {'x': msg['x'], 'y': msg['y']})
+                                self.status.atualizarCacas(msg['_robo'], msg['x'], msg['y'])
+
+                                # Alterações do vinicius
+                                #self.status.atualizarCacas(msg['robo'], {'x': msg['x'], 'y': msg['y']})
 
                                 # Retira a caça encontrada pelo robo
                                 if len(self.status.getCacas()) > 0:
                                     # Jogo segue, avisa a ui
-                                    msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "_robo": msg['robo'], 'x': msg['x'],
-                                           'y': msg['y'], 'ack': 1}
+                                    cacas = self.status.getCacas()
+                                    print(cacas)
+                                    msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "_robo": msg['_robo'], 'x': msg['x'],
+                                           'y': msg['y'], 'ack': 1, 'cacas': cacas}
                                     self._envia_msg_ss(msg)
 
                                 else:
                                     # Teve um vencedor, avisa a ui
-                                    msg = {"cmd": MsgAuditorToUI.DeclararVencedor, "_robo": msg['robo'], 'x': msg['x'],
+                                    msg = {"cmd": MsgAuditorToUI.DeclararVencedor, "_robo": msg['_robo'], 'x': msg['x'],
                                            'y': msg['y']}
                                     self._envia_msg_ui(msg)
-                                    msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "_robo": msg['robo'], 'validacao': 1}
+                                    msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "_robo": msg['_robo'], 'validacao': 1}
                                     self._envia_msg_ss(msg)
 
                             else:

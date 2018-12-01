@@ -237,9 +237,9 @@ class Mover(Thread):
 		# power, target, kp, kd, ki, direction, minref, maxref
 		target = (self._min_ref + self._max_ref)/2
 		self._anda(50, target, float(0.65), 1, float(0.02), 1, self._min_ref, self._max_ref)
-		self._finalizar_movimento()
 		self._coord_x = calc_coord[0]
 		self._coord_y = calc_coord[1]
+		self._finalizar_movimento()
 
 		#Salvar os movimentos no historico
 		if direcao != Mover.PARADO and direcao != Mover.EXIT:

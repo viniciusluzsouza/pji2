@@ -14,10 +14,10 @@ def main():
 	receptorsr = ReceptorSR("localhost")
 	receptorsr.start()
 
-	transmissorsa = TransmissorSA("localhost")
+	transmissorsa = TransmissorSA("192.168.0.103")
 	transmissorsa.start()
 
-	receptorsa = ReceptorSA("localhost")
+	receptorsa = ReceptorSA("192.168.0.103")
 	receptorsa.start()
 
 	gerente.start()

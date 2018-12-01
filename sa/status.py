@@ -25,6 +25,11 @@ class Status:
         # Recupera dados do DB
         self.dados_DB = []
 
+
+        # Movimentação do robp
+        self.mX = 0
+        self.mY = 0
+
     # Configuração do status da partida após definir quem será os jogadores
     # e suas coordenadas iniciais
     def definirPartida(self, nome_roboA, aX, aY, nome_roboB, bX, bY, listaCacas):
@@ -61,6 +66,14 @@ class Status:
             if self.cacas[i]['x'] == caca['x'] and self.cacas[i]['y'] == caca['y']:
                 del self.cacas[i]
                 break
+
+    def movendo(self, x, y):
+        self.mX = x
+        self.mY = y
+
+    def getMovimento(self):
+        return self.mX, self.mY
+
 
     def getCacas(self):
         return self.cacas

@@ -1,5 +1,5 @@
-from mover_test import *
-# from mover import *
+# from mover_test import *
+from mover import *
 from interface import *
 from threading import Thread, Lock
 from shared import *
@@ -216,15 +216,18 @@ class Automatico(Thread):
 
 			# Espera calcular a proxima coordenada
 			shared_obj.wait_event(SharedObj.MoverCoordenadaEvent)
-			# Envia ao SS a coordenada que o robo esta indo
+			# Pega a coord
 			prox_coord = shared_obj.get(SharedObj.MoverCoordenada)
+			# Espera calcular a proxima coordenada
+			shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
+			# Envia ao SS a coordenada que o robo esta indo
 			self._informa_movimento_ss(prox_coord[0], prox_coord[1])
 
 			while True:
 				end = shared_obj.get(SharedObj.MoverMovimento)
 				if end == Mover.PARADO: break
 				elif end == Mover.EXIT: return
-				sleep(1)
+				sleep(0.5)
 
 			print("[AUTOMATICO]: Movimento finalizado")
 			self.historico_mov.append(direcao)

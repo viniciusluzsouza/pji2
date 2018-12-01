@@ -3,7 +3,8 @@
 from tkinter import *
 from random import randint
 
-from Coordenada import *
+from coordenada import *
+from gerente_db import *
 
 class InterfaceGrafica:
 
@@ -18,14 +19,39 @@ class InterfaceGrafica:
         self.backgroudDefault = "gray75"
 
         # ------------- DADOS -------------
-        self.nomeR1 = StringVar()
-        self.nomeR2 = StringVar()
+        self.nomeR1 = ""
+        self.nomeR2 = ""
+        self.cacas1 = 0
+        self.cacas2 = 0
         self.textoParadaR1 = StringVar() # texto "Parada de emergência"
         self.textoParadaR2 = StringVar()
         self.dadosR1 = StringVar() # qtd cacas encontradas, pos atual e prox pos
         self.dadosR2 = StringVar()
         self.dadosGerais = StringVar() # total cacas, cacas encontradas e cacas restantes
         self.textoPausa = StringVar() # escreve pausa ou continua, dependendo da status do robô
+
+        # ----- OBTENDO INFORMAÇÕES DO BANCO DE DADOS -----
+        self.gerente_db = GerenteDB()
+        self.partidas = self.gerente_db.get_partidas()
+        self.cadastros = self.gerente_db.get_partidas()
+
+        for partida in self.partidas:
+            # print(cadastro.get('nome'))
+            self.nomeR1 = partida.get('robo_a')
+            self.nomeR2 = partida.get('robo_b')
+
+        # i = 0
+        # for cadastro in self.cadastros:
+        #     self.backgroud[i] = cadastro.get('cor')
+        #     i = i + 1
+
+        '''
+        FALTA NO BANCO DE DADOS:
+            - Posições atuais de cada robô
+            - Próximas posições de cada robô
+            - Quantidade de caças existentes no tabuleiro todo
+            - Seria melhor se fosse cor1 e cor2, pois aí fica em duas variáveis, ou criar um vetor self.backgroud[i]
+        '''
 
         # --- Cor dos LEDs dos robôs ----
         self.backgroudR1 = "red2"
@@ -74,14 +100,9 @@ class InterfaceGrafica:
         R2 = Coordenada(6, 6)
         R2 = self.transformaCoord(R2)
 
-        self.desenhaMapa("G1", R1, "G2", R2, self.getListaCacas())
+        self.desenhaMapa(self.nomeR1, R1, self.nomeR2, R2, self.getListaCacas())
 
         # --------------------- DADOS INICIAIS DE CADA ROBÔ ---------------------
-        # self.nomeR1.set("")
-        # self.nomeR2.set("")
-
-        self.cacas1 = 0
-        self.cacas2 = 0
         self.pos1 = "(0, 0)"
         self.pos2 = "(6, 6)"
         self.prox1 = "(-, -)"
@@ -102,7 +123,7 @@ class InterfaceGrafica:
         # ------------------------------------------ CONFIGURANDO CONTAINERS ------------------------------------------
         #self.espaco = Label(self.container2, text='Informações', font=self.fontePadrao, pady="25").pack()
         #self.textbox = Label(self.container2, text='Informações', font=self.fontePadrao, width=25).pack()
-        self.textbox = Label(self.container2, textvariable=self.nomeR1, font=self.fontePadrao, bg = self.backgroudR1, width = 20).pack(side=LEFT)
+        self.textbox = Label(self.container2, text=self.nomeR1, font=self.fontePadrao, bg = self.backgroudR1, width = 20).pack(side=LEFT)
         self.container2.pack(fill=X)
         self.textbox = Label(self.container3, textvariable=self.dadosR1, font=self.fonteMenor, bg=self.backgroudDefault, width=27, height=4, anchor=W, justify=LEFT).pack(side=LEFT)
         #self.container3.pack(fill=BOTH) #BOTH -> expande tanto horizontalmente e verticalmente
@@ -111,7 +132,7 @@ class InterfaceGrafica:
         self.espaco = Label(self.container2, text='', font=self.fontePadrao, width=5).pack(side=LEFT)
         self.espaco = Label(self.container3, text='', font=self.fontePadrao, width=5).pack(side=LEFT)
         self.espaco = Label(self.container4, text='', font=self.fontePadrao, width=5).pack(side=LEFT)
-        self.textbox = Label(self.container2, textvariable=self.nomeR2, font=self.fontePadrao, bg=self.backgroudR2, width = 20).pack(side=RIGHT)
+        self.textbox = Label(self.container2, text=self.nomeR2, font=self.fontePadrao, bg=self.backgroudR2, width = 20).pack(side=RIGHT)
         self.textbox = Label(self.container3, textvariable=self.dadosR2, font=self.fonteMenor, bg=self.backgroudDefault, width=27, height=4, anchor=W, justify=LEFT).pack(side=RIGHT)
         self.parada = Label(self.container4, font=self.fontePadrao, textvariable=self.textoParadaR2, foreground="red", width=20).pack(side=RIGHT)
         self.textbox = Label(self.container5, textvariable=self.dadosGerais, font=self.fonteMenor, bg=self.backgroudDefault, width=62).pack()
@@ -249,13 +270,17 @@ class InterfaceGrafica:
     def botaoDeTestes(self):
         # self.textoParadaR1.set("Parada de emergência")
         # print("Obstáculo")
-        self.textoParadaR1.set("Partida pausada")
-        print("Pausa")
-        self.textoPausa.set('Continua')
+        if (self.textoParadaR1.get() == "Partida pausada"): # se a partida já está pausada
+            self.textoParadaR1.set('')
+            self.textoPausa.set('Pausa')
+        else:
+            self.textoParadaR1.set("Partida pausada")
+            print("Pausa")
+            self.textoPausa.set('Continua')
 
         # ------- DADOS VINDO DO SS -------
-        nR1 = "G1"
-        nR2 = "G2"
+        # nR1 = "G1"
+        # nR2 = "G2"
 
         R1 = Coordenada(randint(0,6), randint(0,6))
         posR1X = R1.getX()
@@ -273,11 +298,14 @@ class InterfaceGrafica:
         xProxR2 = randint(0, 6)
         yProxR2 = randint(0, 6)
 
-        self.desenhaMapa(nR1, R1, nR2, R2, self.getListaCacas())
+        self.desenhaMapa(self.nomeR1, R1, self.nomeR2, R2, self.getListaCacas())
 
-        self.cacas1 = 2
-        self.cacas2 = 1
+        # self.cacas1 = 2
+        # self.cacas2 = 1
 
+        for partida in self.partidas:
+            self.cacas1 = partida.get('cacas_a')
+            self.cacas2 = partida.get('cacas_b')
 
         self.pos1 = "(%d, %d)" % (posR1X, posR1Y)
         self.pos2 = "(%d, %d)" % (posR2X, posR2Y)
@@ -289,11 +317,11 @@ class InterfaceGrafica:
         self.dadosR2.set(' Caças coletadas: %d\n Posição atual: %s \n Próxima posição: %s' % (self.cacas2, self.pos2, self.prox2))
         # MOSTRAR QUANDO O ROBÔ QUER VALIDAR CAÇA
 
-        self.nomeR1.set(nR1)
-        self.nomeR2.set(nR2)
+        # self.nomeR1.set(nR1)
+        # self.nomeR2.set(nR2)
 
-        self.totalCacas = 5
-        self.cacasEncontradas = 3
+        self.totalCacas = 7 # Total de caças que existem no mapa inteiro
+        self.cacasEncontradas = (self.cacas1 + self.cacas2)
         self.cacasRestantes = (self.totalCacas - self.cacasEncontradas)
         self.dadosGerais.set('Total de caças: %d\n Caças encontradas: %d\n Caças restantes: %d' % (self.totalCacas, self.cacasEncontradas, self.cacasRestantes))
 

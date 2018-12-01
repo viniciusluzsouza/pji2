@@ -1,5 +1,5 @@
-from mover_test import *
-# from mover import *
+# from mover_test import *
+from mover import *
 from interface import *
 from threading import Thread, Lock
 from time import sleep
@@ -70,8 +70,11 @@ class Manual(Thread):
 		shared_obj.set(SharedObj.MoverMovimento, direcao)
 		# Espera calcular a proxima coordenada
 		shared_obj.wait_event(SharedObj.MoverCoordenadaEvent)
-		# Envia ao SS a coordenada que o robo esta indo
+		# Pega proxima coord
 		prox_coord = shared_obj.get(SharedObj.MoverCoordenada)
+		# Limpa evento mover coordenada
+		shared_obj.clear_event(SharedObj.MoverCoordenadaEvent)
+		# Envia ao SS a coordenada que o robo esta indo
 		self._avisa_movimento(prox_coord[0], prox_coord[1])
 
 		while True:
