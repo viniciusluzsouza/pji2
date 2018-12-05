@@ -136,8 +136,11 @@ class InterfaceSR(Thread):
 		new_cacas = []
 		for caca in cacas:
 			new_cacas.append((caca['x'], caca['y']))
-		shared_obj.set(SharedObj.InterfaceCacasAtualizadas, new_cacas)
-		shared_obj.set(SharedObj.InterfaceNovasCacas, 1)
+
+		old_cacas = shared_obj.get(SharedObj.InterfaceCacasAtualizadas)
+		if new_cacas != old_cacas:
+			shared_obj.set(SharedObj.InterfaceCacasAtualizadas, new_cacas)
+			shared_obj.set(SharedObj.InterfaceNovasCacas, 1)
 
 
 	def _atualiza_pos_adv(self, pos):
@@ -288,10 +291,10 @@ class InterfaceSR(Thread):
 			shared_obj.clear_event(SharedObj.InterfaceEvent)
 
 if __name__ == "__main__":
-	t = Transmissor("192.168.0.100")
+	t = Transmissor("172.20.10.5")
 	t.start()
 
-	r = Receptor("192.168.0.100")
+	r = Receptor("172.20.10.5")
 	r.start()
 
 	i = InterfaceSR()

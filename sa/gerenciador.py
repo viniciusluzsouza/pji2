@@ -77,6 +77,7 @@ class Gerenciador():
 
     def init_thread_rede(self):
         def gerencia_msg_rede():
+
             while True:
                 # Espera alguma mensagem ...
 
@@ -111,12 +112,11 @@ class Gerenciador():
 
                         elif cmd == MsgSStoSA.PosicaoAtual:
                             # Caso a posição do robo não seja igual aquela que consta no status, avise UI
-                            if not self.status.getCoordRobo(msg['robo']) == msg['x'] and not self.status.getCoordRobo(
-                                    msg['robo']) == msg['y']:
-                                self.status.atualizarPosicaoRobo(msg['robo'], msg['x'], msg['y'])
-                                msg = {"cmd": MsgAuditorToUI.AtualizarRobo, "_robo": msg['robo'], 'x': msg['x'],
-                                       'y': msg['y']}
-                                self._envia_msg_ui(msg)
+                            #if not self.status.getCoordRobo(msg['robo']) == msg['x'] and not self.status.getCoordRobo(
+                            #       msg['robo']) == msg['y']:
+                            self.status.atualizarPosicaoRobo(msg['robo'], msg['x'], msg['y'])
+                            msg = {"cmd": MsgAuditorToUI.AtualizarRobo, "_robo": msg['robo']}
+                            self._envia_msg_ui(msg)
 
 
                         elif cmd == MsgSStoSA.ValidaCaca:
@@ -187,10 +187,28 @@ class Gerenciador():
                             msg = {"cmd": MsgAuditorToUI.RecuperarHistorico_RESP}
                             self._envia_msg_ui(msg)
 
+                        elif cmd == MsgUItoAuditor.AtualizaMapa:
+                            cacas = self.status.getCacas()
+                            #robo = msg['robo']
+                            #msg = {}
+                            print("RECEBENDO MENSAGEM POSATUAL")
+                            msg1 = {}
+                            if msg['_robo'] == self.status.getRoboA():
+                                x, y = self.status.getCoordRobo(self.status.getRoboB())
+                                msg1 = {'cmd': MsgSAtoSS.AtualizaMapa, '_robo': msg['_robo'],
+                                       'cacas': cacas, 'x': x, 'y': y}
+
+                            elif msg['_robo'] == self.status.getRoboB():
+                                x, y = self.status.getCoordRobo(self.status.getRoboA())
+                                msg1 = {'cmd': MsgSAtoSS.AtualizaMapa, '_robo': msg['_robo'],
+                                       'cacas': cacas, 'x': x, 'y': y}
+
+                            self._envia_msg_ss(msg1)
+
                         elif cmd == MsgUItoAuditor.ValidarCaca:
                             if msg['validacao'] == 1:
 
-                                self.status.atualizarCacas(msg['_robo'], msg['x'], msg['y'])
+                                #self.status.atualizarCacas(msg['_robo'], msg['x'], msg['y'])
 
                                 # Alterações do vinicius
                                 #self.status.atualizarCacas(msg['robo'], {'x': msg['x'], 'y': msg['y']})

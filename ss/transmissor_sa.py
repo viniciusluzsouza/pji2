@@ -9,6 +9,8 @@ class TransmissorSA(Thread):
 	def __init__(self, host):
 		super(TransmissorSA, self).__init__()
 
+		#credenciais = pika.PlainCredentials('test', 'test')
+		#self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host), credentials=credenciais))
 		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host)))
 		self.channel = self.connection.channel()
 		self.channel.queue_declare(queue='SS_to_SA')

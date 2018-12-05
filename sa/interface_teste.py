@@ -74,8 +74,11 @@ class Inter(Thread):
 
                 if msg['cmd'] == MsgAuditorToUI.AtualizarRobo:
                     # Ja esta sendo atualizado no robo, precisa atualizar aqui tambem?
-                    # self.status.atualizarPosicaoRobo(msg['robo'], msg['x'], msg['y'])
-                    pass
+
+                    x, y = self.status.getCoordRobo(msg['_robo'])
+                    print("Robo", msg['_robo'], "Posicao atual (" + str(x) +","+ str(y)+")")
+                    msg = {'_dir': 'ui', 'cmd': MsgUItoAuditor.AtualizaMapa, '_robo': msg['_robo']}
+                    self.avisar_gerenciador(msg)
 
                 if msg['cmd'] == MsgAuditorToUI.ValidarCaca:
                     print("ROBO: " + msg['robo'] + " solicita validação de caça")
@@ -94,6 +97,7 @@ class Inter(Thread):
                     while True:
                         v = input("VALIDAR?\n(s) SIM\n(n) NÃO\n")
                         if v == 's':
+                            self.status.atualizarCacas(msg['robo'], msg['x'], msg['y'])
                             msg = {'_robo': msg['robo'], '_dir': 'ui', 'cmd': MsgUItoAuditor.ValidarCaca, 'validacao': 1, 'x': msg['x'], 'y': msg['y']}
                             self.avisar_gerenciador(msg)
                             break

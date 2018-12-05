@@ -54,6 +54,7 @@ class MsgUItoAuditor(object):
 	RecuperarCadastros = 4003
 	ValidarCaca = 4004
 	NovoJogo = 4005
+	AtualizaMapa = 4006
 
 
 

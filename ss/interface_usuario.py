@@ -68,7 +68,8 @@ class InterfaceUsuario(Thread):
 					print("[SA] Sistema auditor continuou o jogo!\n")
 
 				elif cmd == InterfaceUsuario.SA_AtualizaMapa:
-					print("\n[SA] Atualizacao de cacas ... \n")
+					pass
+					# 	print("\n[SA] Atualizacao de cacas ... \n")
 
 				else:
 					pass

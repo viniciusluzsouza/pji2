@@ -55,17 +55,17 @@ class Status:
             self.coord_r2.setY(y)
         return True
 
-    def atualizarCacaRobo(self, robo, caca):
-        if not self._validarRobo(robo): return False
+    def _atualizarCacaRobo(self, robo, caca):
+        #if not self._validarRobo(robo): return False
         if self.r1 == robo:
             self.r1_cacasEncontradas.append(caca)
         else:
             self.r2_cacasEncontradas.append(caca)
 
-        for i in range(len(self.cacas)):
-            if self.cacas[i]['x'] == caca['x'] and self.cacas[i]['y'] == caca['y']:
-                del self.cacas[i]
-                break
+        #for i in range(len(self.cacas)):
+        #    if self.cacas[i]['x'] == caca['x'] and self.cacas[i]['y'] == caca['y']:
+        #        del self.cacas[i]
+        #        break
 
     def movendo(self, x, y):
         self.mX = x
@@ -103,12 +103,17 @@ class Status:
     # Este metodo verifica a caça e se ela for valida, ele deleta ela da lista
     # Chamar este metodo implica em chamar getCacas() logo em seguida para verificar se a lista não está vazia
     def atualizarCacas(self, robo, x, y):
-        if self._validarRobo(robo): return False
+        #if self._validarRobo(robo): return False
         for i in range(len(self.cacas)):
+            print('verificando')
             caca = self.cacas[i]
             if caca['x'] == x and caca['y'] == y:
-                self.atualizarCacaRobo(robo, caca[i])
+                if self.r1 == robo:
+                    self.r1_cacasEncontradas.append(caca)
+                else:
+                    self.r2_cacasEncontradas.append(caca)
                 del self.cacas[i]
+                print("Validada")
                 return True
         return False
 

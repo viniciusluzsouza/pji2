@@ -13,6 +13,8 @@ class ReceptorSA(Thread):
 		self._nome = shared_obj.get(SharedObj.NomeDoRobo)
 		self._exchange = 'SA_to_SS'
 
+		# credenciais = pika.PlainCredentials('test', 'test')
+		# self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host), credentials=credenciais))
 		self.connection = pika.BlockingConnection(pika.ConnectionParameters(host=str(host)))
 		self.channel = self.connection.channel()
 		self.channel.exchange_declare(exchange=self._exchange, exchange_type='direct')

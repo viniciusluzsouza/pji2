@@ -233,11 +233,11 @@ class Automatico(Thread):
 			self.historico_mov.append(direcao)
 
 			if self._verifica_pausa() == Mover.EXIT:
-				return
+				break
 			if shared_obj.get(SharedObj.InterfaceFimJogo):
-				return
+				break
 			if shared_obj.get(SharedObj.InterfaceNovasCacas):
-				return
+				break
 
 	def run(self):
 		global shared_obj
