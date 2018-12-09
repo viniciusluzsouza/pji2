@@ -40,6 +40,7 @@ class MsgSRtoSS(object):
 	NovoJogoConfigurado = 2001
 	SolicitaHistorico_RESP = 2002
 	SolicitaStatus_RESP = 2003
+	FinalizaJogo = 2004
 
 class MsgRoboErro(object):
 	"""docstring for ErroMsgSStoS"""

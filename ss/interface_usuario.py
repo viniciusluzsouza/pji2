@@ -4,6 +4,7 @@ from mensagens_robo import *
 from mensagens_auditor import *
 from threading import Thread
 from select import select
+from copy import deepcopy
 
 class ModoDeJogo(object):
 	MANUAL = 1
@@ -28,7 +29,7 @@ class InterfaceUsuario(Thread):
 
 	def __init__(self):
 		super(InterfaceUsuario, self).__init__()
-
+		self.posicao = (0, 0)
 
 	def inicializa_tread_evento(self):
 		def func_thread_evento(manual=False):
@@ -47,6 +48,7 @@ class InterfaceUsuario(Thread):
 
 				elif cmd == InterfaceUsuario.SR_PosicaoAtual:
 					print("[SR] Posicao atual: (%s, %s)" % (str(msg['x']), str(msg['y'])))
+					self.posicao = (msg['x'], msg['y'])
 					if manual: shared_obj.set_event(SharedObj.InterfaceUsuarioNovoComando)
 
 				elif cmd == InterfaceUsuario.SR_ValidaCaca:
@@ -68,7 +70,7 @@ class InterfaceUsuario(Thread):
 					print("[SA] Sistema auditor continuou o jogo!\n")
 
 				elif cmd == InterfaceUsuario.SA_AtualizaMapa:
-					pass
+					self._atualiza_cacas(msg['cacas'])
 					# 	print("\n[SA] Atualizacao de cacas ... \n")
 
 				else:
@@ -83,6 +85,22 @@ class InterfaceUsuario(Thread):
 			t = Thread(target=func_thread_evento)
 		t.start()
 
+	def _organizar_cacas(self):
+		self.cacas_ordenadas = deepcopy(self.cacas)
+		if self.posicao_inicial == (6, 6):
+			self.cacas_ordenadas.sort(reverse=True)
+		else:
+			self.cacas_ordenadas.sort()
+
+	def _atualiza_cacas(self, cacas):
+		new_cacas = []
+		for caca in cacas:
+			new_cacas.append((caca['x'], caca['y']))
+
+		if new_cacas != self.cacas:
+			self.cacas = deepcopy(new_cacas)
+			self._organizar_cacas()
+			print("\nNovas cacas: %s" % str(self.cacas_ordenadas))
 
 	def _novo_jogo_automatico(self):
 		print("#### Serao exibidos logs na tela para monitoramento")
@@ -91,7 +109,8 @@ class InterfaceUsuario(Thread):
 		print("               'c' - continua\n")
 
 		print("Posicao inicial: %s" % str(self.posicao_inicial))
-		print("Cacas: %s\n" % str(self.cacas))
+		self._organizar_cacas()
+		print("Cacas: %s\n" % str(self.cacas_ordenadas))
 
 		global shared_obj
 		while True:
@@ -143,6 +162,8 @@ class InterfaceUsuario(Thread):
 
 		print("Sua posicao inicial e: %s\n" % str(self.posicao_inicial))
 		shared_obj.set_event(SharedObj.InterfaceUsuarioNovoComando)
+		self._organizar_cacas()
+		print("Cacas: %s\n" % str(self.cacas_ordenadas))
 
 		while True:
 			shared_obj.wait_event(SharedObj.InterfaceUsuarioNovoComando, timeout=15.0)
@@ -163,18 +184,8 @@ class InterfaceUsuario(Thread):
 			elif cmd == 'd':
 				self._gerente_mover(MoverDirecao.DIREITA)
 			elif cmd == 'v':
-				print("#### Digite sua posicao:")
-				try:
-					x = input("X: ")
-					y = input("Y: ")
-					x = int(x)
-					y = int(y)
-				except:
-					print("Valor digitado invalido")
-					continue
-
 				if shared_obj.get(SharedObj.InterfaceUsuarioFimJogo): break
-				self._manual_valida_caca(x, y)
+				self._manual_valida_caca(self.posicao[0], self.posicao[1])
 
 			if shared_obj.get(SharedObj.InterfaceUsuarioFimJogo): break
 			shared_obj.clear_event(SharedObj.InterfaceUsuarioNovoComando)
@@ -185,6 +196,7 @@ class InterfaceUsuario(Thread):
 	def novo_jogo(self, msg):
 		self.modo_jogo = msg['modo_jogo']
 		self.posicao_inicial = msg['posicao_inicial']
+		self.posicao = (msg['posicao_inicial'])
 
 		if 'cacas' in msg:
 			self.cacas = []

@@ -1,5 +1,5 @@
-# from mover_test import *
-from mover import *
+from mover_test import *
+# from mover import *
 from interface import *
 from threading import Thread, Lock
 from shared import *
@@ -193,6 +193,9 @@ class Automatico(Thread):
 		if pos_atual in self.cacas_encontradas:
 			self.cacas_encontradas.remove(pos_atual)
 
+		msg = {'cmd': MsgSRtoSS.FinalizaJogo}
+		self._envia_msg(msg)
+
 
 	def _go(self):
 		global shared_obj
@@ -252,15 +255,17 @@ class Automatico(Thread):
 			if shared_obj.get(SharedObj.InterfaceFimJogo):
 				break
 
-			ack, pos = self._valida_caca()
-			if ack:
-				print("\n[AUTOMATICO]: CACA VALIDADA!!\n")
-			elif pos:
-				print("\n[AUTOMATICO]: CACA INVALIDADA. POSICAO AJUSTADA\n")
-			else:
-				print("\n[AUTOMATICO]: CACA INVALIDADE E POSICAO NAO AJUSTADA. E AGORA?\nVAMOS ABORTAR !")
-				# TODO: situacao de erro, pensar o que fazer
-				break
+			pos = shared_obj.get(SharedObj.MoverCoordenada)
+			if pos in self.cacas_ordenadas:
+				ack, pos = self._valida_caca()
+				if ack:
+					print("\n[AUTOMATICO]: CACA VALIDADA!!\n")
+				elif pos:
+					print("\n[AUTOMATICO]: CACA INVALIDADA. POSICAO AJUSTADA\n")
+				else:
+					print("\n[AUTOMATICO]: CACA INVALIDADE E POSICAO NAO AJUSTADA. E AGORA?\nVAMOS ABORTAR !")
+					# TODO: situacao de erro, pensar o que fazer
+					break
 
 			if not len(self.cacas_ordenadas):
 				# FIM DO JOGO

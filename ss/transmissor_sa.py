@@ -2,6 +2,7 @@ import pika
 import json
 from threading import Thread, Event
 from shared_ss import *
+from time import sleep
 
 class TransmissorSA(Thread):
 	"""docstring for TransmissoSA"""
@@ -30,6 +31,8 @@ class TransmissorSA(Thread):
 
 			if 'robo' not in msg:
 				msg['robo'] = shared_obj.get(SharedObj.NomeDoRobo)
+
+			# print("Transmitindo: %s" % str(msg))
 
 			try:
 				msg = json.dumps(msg)

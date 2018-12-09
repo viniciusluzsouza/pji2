@@ -1,6 +1,5 @@
 from gerenciador import *
 from status import *
-from Interface import *
 
 status = Status()
 

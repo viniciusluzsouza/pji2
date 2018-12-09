@@ -186,7 +186,7 @@ class Gerenciador(Thread):
 
 				elif cmd == MsgSAtoSS.AtualizaMapa:
 					# Avisa interface usuario
-					ui_msg = {'cmd': InterfaceUsuario.SA_AtualizaMapa}
+					ui_msg = {'cmd': InterfaceUsuario.SA_AtualizaMapa, 'cacas': msg['cacas']}
 					shared_obj.set(SharedObj.InterfaceUsuarioMsg, ui_msg)
 					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
 
@@ -264,6 +264,11 @@ class Gerenciador(Thread):
 					# Transmite para SA
 					shared_obj.set(SharedObj.TransmitirSALock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSAEvent)
+
+				elif cmd == MsgSRtoSS.FinalizaJogo:
+					# Avisa interface usuario
+					shared_obj.set(SharedObj.InterfaceUsuarioFimJogo, 1)
+					shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
 
 				else:
 					pass
