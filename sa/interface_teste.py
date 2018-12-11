@@ -77,10 +77,20 @@ class Inter(Thread):
 
                     x, y = self.status.getCoordRobo(msg['_robo'])
                     print("Robo", msg['_robo'], "Posicao atual (" + str(x) +","+ str(y)+")")
-                    msg = {'_dir': 'ui', 'cmd': MsgUItoAuditor.AtualizaMapa, '_robo': msg['_robo']}
-                    self.avisar_gerenciador(msg)
+                    # msg = {'_dir': 'ui', 'cmd': MsgUItoAuditor.AtualizaMapa, '_robo': msg['_robo']}
+                    # self.avisar_gerenciador(msg)
 
-                if msg['cmd'] == MsgAuditorToUI.ValidarCaca:
+
+                elif msg['cmd'] == MsgAuditorToUI.DeclararVencedor:
+
+                    msg = {'_robo': '', "cmd": MsgUItoAuditor.FimdeJogo, 'vencedor': msg['_robo'],'_dir': 'ui'}
+
+                    self.avisar_gerenciador(msg)
+                    print(msg['_robo'], "VENCEDOR!!!!!!\n")
+                    exit(-1)
+
+
+                elif msg['cmd'] == MsgAuditorToUI.ValidarCaca:
                     print("ROBO: " + msg['robo'] + " solicita validação de caça")
                     print("Na posição: ", '(', msg['x'], ',', msg['y'], ')')
                     x = 0
@@ -93,7 +103,12 @@ class Inter(Thread):
                         x, y = self.status.getCoordRobo(self.status.getRoboB())
                     print("POSICAO DO ROBO: ", "(", x, ",", y, ")")
 
-
+                    ####
+                    self.status.atualizarCacas(msg['robo'], msg['x'], msg['y'])
+                    msg = {'_robo': msg['robo'], '_dir': 'ui', 'cmd': MsgUItoAuditor.ValidarCaca, 'validacao': 1,
+                           'x': msg['x'], 'y': msg['y']}
+                    self.avisar_gerenciador(msg)
+                    ''''
                     while True:
                         v = input("VALIDAR?\n(s) SIM\n(n) NÃO\n")
                         if v == 's':
@@ -104,6 +119,7 @@ class Inter(Thread):
 
                         else:
                             print("Comando invalido")
+                    '''
 
 
 

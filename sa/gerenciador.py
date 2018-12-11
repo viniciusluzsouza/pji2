@@ -7,7 +7,7 @@ from copy import deepcopy
 import compartilhados
 from status import *
 from interface_teste import *
-
+#from Interface import *
 
 class Gerenciador():
     """Gerenciador do SA. Trata mensagens vindas de qualquer lugar."""
@@ -30,8 +30,17 @@ class Gerenciador():
         self.receptor = Receptor("localhost")
         self.receptor.start()
 
-        self.interface = Inter(status)
-        self.interface.start()
+        ui = Inter(status)
+        ui.start()
+
+        #ui = InterfaceGrafica(status)
+        #ui.start()
+        #a = Thread(target=ui.atualizaPartida)
+        #a.start()
+
+
+        #ui = Thread(target=InterfaceGrafica(status))
+        #ui.start()
 
         super(Gerenciador, self).__init__()
 
@@ -78,10 +87,10 @@ class Gerenciador():
     def init_thread_rede(self):
         def gerencia_msg_rede():
 
+            print("Gerente ativo")
             while True:
                 # Espera alguma mensagem ...
 
-                #print("Gerente ativo")
                 compartilhados.solicita_gerente.wait()
                 print("Executando gerente")
                 with compartilhados.gerente_msg_lock:
@@ -115,8 +124,25 @@ class Gerenciador():
                             #if not self.status.getCoordRobo(msg['robo']) == msg['x'] and not self.status.getCoordRobo(
                             #       msg['robo']) == msg['y']:
                             self.status.atualizarPosicaoRobo(msg['robo'], msg['x'], msg['y'])
-                            msg = {"cmd": MsgAuditorToUI.AtualizarRobo, "_robo": msg['robo']}
-                            self._envia_msg_ui(msg)
+                            msg1 = {"cmd": MsgAuditorToUI.AtualizarRobo, "_robo": msg['robo']}
+                            self._envia_msg_ui(msg1)
+
+                            cacas = self.status.getCacas()
+                            #robo = msg['robo']
+                            #msg = {}
+                            print("RECEBENDO MENSAGEM POSATUAL")
+                            msg2 = {}
+                            if msg['robo'] == self.status.getRoboA():
+                                x, y = self.status.getCoordRobo(self.status.getRoboB())
+                                msg2 = {'cmd': MsgSAtoSS.AtualizaMapa, '_robo': msg['robo'],
+                                       'cacas': cacas, 'x': x, 'y': y}
+
+                            elif msg['robo'] == self.status.getRoboB():
+                                x, y = self.status.getCoordRobo(self.status.getRoboA())
+                                msg2 = {'cmd': MsgSAtoSS.AtualizaMapa, '_robo': msg['robo'],
+                                       'cacas': cacas, 'x': x, 'y': y}
+
+                            self._envia_msg_ss(msg2)
 
 
                         elif cmd == MsgSStoSA.ValidaCaca:
@@ -171,8 +197,13 @@ class Gerenciador():
                         cmd = msg['cmd']
 
                         if cmd == MsgUItoAuditor.FimdeJogo:
-                            self.salva_historico(self.status.getRoboA(), self.status.getCacaRoboA(),
-                                                 self.status.getRoboB(), self.status.getCacaRoboB())
+                            #self.salva_historico(self.status.getRoboA(), self.status.getCacaRoboA(),
+                            #                     self.status.getRoboB(), self.status.getCacaRoboB())
+
+                            import time
+                            print("FIM DE JOGO")
+                            msg['cmd'] = MsgSAtoSS.FimJogo
+                            exit(-1)
 
                         elif cmd == MsgUItoAuditor.CadastrarRobo:
                             self.cadastra_robo(msg['_robo'], msg['cor'], msg['mac'])
@@ -205,6 +236,7 @@ class Gerenciador():
 
                             self._envia_msg_ss(msg1)
 
+
                         elif cmd == MsgUItoAuditor.ValidarCaca:
                             if msg['validacao'] == 1:
 
@@ -223,12 +255,22 @@ class Gerenciador():
                                     self._envia_msg_ss(msg)
 
                                 else:
+                                    import time
+                                    # Primeiro envia validacao
+                                    cacas = self.status.getCacas()
+                                    print(cacas)
+                                    msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "_robo": msg['_robo'], 'x': msg['x'],
+                                           'y': msg['y'], 'ack': 1, 'cacas': cacas}
+                                    self._envia_msg_ss(msg)
+
+                                    time.sleep(0.1)
+
                                     # Teve um vencedor, avisa a ui
                                     msg = {"cmd": MsgAuditorToUI.DeclararVencedor, "_robo": msg['_robo'], 'x': msg['x'],
                                            'y': msg['y']}
                                     self._envia_msg_ui(msg)
-                                    msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "_robo": msg['_robo'], 'validacao': 1}
-                                    self._envia_msg_ss(msg)
+                                    #msg = {"cmd": MsgSAtoSS.ValidacaoCaca, "_robo": msg['_robo'], 'ack': 1}
+                                    #self._envia_msg_ss(msg)
 
                             else:
                                 pass
@@ -240,6 +282,7 @@ class Gerenciador():
                             import time
                             print("NOVO JOGO")
                             msg['cmd'] = MsgSAtoSS.NovoJogo
+                            msg['modo_jogo'] = int(msg['modo_jogo'])
                             msg1, msg2 = self._gera_msg_novo_jogo(msg)
                             self._envia_msg_ss(msg1)
                             time.sleep(0.1)
@@ -267,11 +310,7 @@ class Gerenciador():
         return
 
 
-if __name__ == '__main__':
-    print("Inicializando ...")
-    status = Status()
-    gerente = Gerenciador(status)
-    gerente.init_thread_rede()
+
 '''
 ### TESTE:
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 from manual import *
 from automatico import *
-# from mover import *
-from mover_test import *
+from mover import *
+# from mover_test import *
 from shared import *
 from receptor import *
 from transmissor import *
@@ -291,10 +291,10 @@ class InterfaceSR(Thread):
 			shared_obj.clear_event(SharedObj.InterfaceEvent)
 
 if __name__ == "__main__":
-	t = Transmissor("localhost")
+	t = Transmissor("192.168.0.100")
 	t.start()
 
-	r = Receptor("localhost")
+	r = Receptor("192.168.0.100")
 	r.start()
 
 	i = InterfaceSR()

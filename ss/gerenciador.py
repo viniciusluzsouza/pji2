@@ -184,6 +184,17 @@ class Gerenciador(Thread):
 					shared_obj.set(SharedObj.TransmitirSRLock, msg)
 					shared_obj.set_event(SharedObj.TransmitirSREvent)
 
+					if 'cacas' in msg and not len(msg['cacas']):
+						# Finaliza jogo
+						import time
+						time.sleep(0.1)
+						msg['cmd'] = MsgSStoSR.FimJogo
+						shared_obj.set(SharedObj.TransmitirSRLock, msg)
+						shared_obj.set_event(SharedObj.TransmitirSREvent)
+						shared_obj.set(SharedObj.InterfaceUsuarioFimJogo, 1)
+						shared_obj.set_event(SharedObj.InterfaceUsuarioEvent)
+
+
 				elif cmd == MsgSAtoSS.AtualizaMapa:
 					# Avisa interface usuario
 					ui_msg = {'cmd': InterfaceUsuario.SA_AtualizaMapa, 'cacas': msg['cacas']}

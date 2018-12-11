@@ -1,5 +1,5 @@
-from mover_test import *
-# from mover import *
+# from mover_test import *
+from mover import *
 from interface import *
 from threading import Thread, Lock
 from shared import *
@@ -207,8 +207,6 @@ class Automatico(Thread):
 		direcoes = self._calcula_direcoes(caca)
 		print("[AUTOMATICO]: Direcoes : %s" % str(direcoes))
 		while len(direcoes):
-			self._informa_posicao()
-
 			direcao = direcoes.pop(0)
 			# Limpa evento mover coordenada e seta direcao
 			print("[AUTOMATICO]: Inicia movimento")
@@ -234,6 +232,7 @@ class Automatico(Thread):
 
 			print("[AUTOMATICO]: Movimento finalizado")
 			self.historico_mov.append(direcao)
+			self._informa_posicao()
 
 			if self._verifica_pausa() == Mover.EXIT:
 				break
@@ -257,6 +256,7 @@ class Automatico(Thread):
 
 			pos = shared_obj.get(SharedObj.MoverCoordenada)
 			if pos in self.cacas_ordenadas:
+				print("\n[AUTOMATICO]: Validando caca\n")
 				ack, pos = self._valida_caca()
 				if ack:
 					print("\n[AUTOMATICO]: CACA VALIDADA!!\n")
